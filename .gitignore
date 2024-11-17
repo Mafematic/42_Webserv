@@ -19,3 +19,5 @@ submission/
 handin/
 .vscode
 **/*.log
+!Makefile
+!makefile
