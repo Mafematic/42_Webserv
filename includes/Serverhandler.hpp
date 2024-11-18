@@ -4,7 +4,8 @@
 #include "webserv.hpp"
 #include "Server.hpp"
 
-class Serverhandler {
+class Serverhandler
+{
 	public:
 		Serverhandler();
 		Serverhandler(int port, std::string ip);

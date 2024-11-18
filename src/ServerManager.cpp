@@ -31,87 +31,87 @@ void ServerManager::setup(std::string config_path)
 
 void ServerManager::sendClientResponse(int clientSocket, const std::string &response, bool keepAlive)
 {
-    ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0); // 0 = no flags
-    if (bytesSent < 0)
-    {
-        perror("Failed to send response");
-    }
-    if (!keepAlive)
-    {
-        close(clientSocket);
-    }
+	ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0); // 0 = no flags
+	if (bytesSent < 0)
+	{
+		perror("Failed to send response");
+	}
+	if (!keepAlive)
+	{
+		close(clientSocket);
+	}
 }
 
 std::string ServerManager::readRequest(int clientSocket)
 {
 	char buffer[BUFFER_SIZE];
-    int bytes_read = read(clientSocket, buffer, sizeof(buffer) - 1);
-    if (bytes_read <= 0)
-    {
-        perror("Failed to read request");
-        close(clientSocket);
-        return "";
-    }
-    buffer[bytes_read] = '\0';
-    return std::string(buffer);
+	int bytes_read = read(clientSocket, buffer, sizeof(buffer) - 1);
+	if (bytes_read <= 0)
+	{
+		perror("Failed to read request");
+		close(clientSocket);
+		return "";
+	}
+	buffer[bytes_read] = '\0';
+	return std::string(buffer);
 }
 
 int ServerManager::getContentLength(const std::string& request)
 {
-    size_t content_length_pos = request.find("Content-Length: ");
-    if (content_length_pos != std::string::npos)
+	size_t content_length_pos = request.find("Content-Length: ");
+	if (content_length_pos != std::string::npos)
 	{
-        size_t start = content_length_pos + 16; // "Content-Length: " length
-        size_t end = request.find("\r\n", start);
-        std::string content_length_str = request.substr(start, end - start);
-        int content_length;
-        std::istringstream(content_length_str) >> content_length;
-        return content_length;
-    }
-    return 0;
+		size_t start = content_length_pos + 16; // "Content-Length: " length
+		size_t end = request.find("\r\n", start);
+		std::string content_length_str = request.substr(start, end - start);
+		int content_length;
+		std::istringstream(content_length_str) >> content_length;
+		return content_length;
+	}
+	return 0;
 }
 
 std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer, int contentLength)
 {
-    size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
-    int bodyReadSoFar = buffer.size() - headerEnd;  // Already read part of the body
+	size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
+	int bodyReadSoFar = buffer.size() - headerEnd;  // Already read part of the body
 
-    while (bodyReadSoFar < contentLength)
-    {
-        char temp_buffer[BUFFER_SIZE];
-        int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
+	while (bodyReadSoFar < contentLength)
+	{
+		char temp_buffer[BUFFER_SIZE];
+		int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
 
-        if (bytesRead > 0)
-        {
-            temp_buffer[bytesRead] = '\0';
-            buffer += temp_buffer;
-            bodyReadSoFar += bytesRead;
-        }
-        else
-        {
-            break; // Connection closed or error
-        }
-    }
+		if (bytesRead > 0)
+		{
+			temp_buffer[bytesRead] = '\0';
+			buffer += temp_buffer;
+			bodyReadSoFar += bytesRead;
+		}
+		else
+		{
+			break; // Connection closed or error
+		}
+	}
 
-    return buffer;
+	return buffer;
 }
 
 
 void ServerManager::handleClient(int clientSocket)
 {
 	std::string buffer = readRequest(clientSocket);
-    if (buffer.empty())
+	if (buffer.empty())
 	{
-        return;
+		return;
 	}
 	int contentLength = getContentLength(buffer);
-    if (contentLength > 0)
-    {
-        buffer = readRequestBody(clientSocket, buffer, contentLength);
-    }
+	if (contentLength > 0)
+	{
+		buffer = readRequestBody(clientSocket, buffer, contentLength);
+	}
 
-    std::cout << "===== RECEIVED REQUEST =====" << std::endl;
-    std::cout << buffer << std::endl;
+	std::cout << "===== RECEIVED REQUEST =====" << std::endl;
+	std::cout << buffer << std::endl;
 	Request req(buffer); // Parse the raw request
 
 	std::string response = RequestRouter::route(req);
