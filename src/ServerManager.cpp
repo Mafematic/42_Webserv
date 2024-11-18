@@ -17,6 +17,7 @@ void ServerManager::setup(std::string config_path)
 			{
 				tmp_it->_servers.push_back(*it);
 				duplicate_flag = true;
+				std::cout << YELLOW << "[Serverduplicat detected] added to existing socket: " << tmp_it->getSocket() << RESET << std::endl;
 				break ;
 			}
 		}
@@ -151,14 +152,13 @@ void ServerManager::run()
 				for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
 				{
 					if (_eventFd == it->getSocket()) {
+						acceptNewConnection(*it);
 						isServerSocket = true;
 						break;
 					}
 				}
 
-				if (isServerSocket)
-					acceptNewConnection();
-				else
+				if (isServerSocket == false)
 				{
 					if (_clients.find(_eventFd) != _clients.end())
 					{
@@ -189,7 +189,7 @@ void	ServerManager::checkTimeout()
 	}
 }
 
-void	ServerManager::acceptNewConnection()
+void	ServerManager::acceptNewConnection(Serverhandler handler)
 {
 	int clientSocket = accept(_eventFd, NULL, NULL);
 	if (clientSocket >= 0)
@@ -205,7 +205,7 @@ void	ServerManager::acceptNewConnection()
 			return ;
 		}
 		std::cout << GREEN << "Accepted new client connection : ClientFd " << clientSocket << RESET << std::endl;
-		Client new_client(clientSocket);
+		Client new_client(clientSocket, handler);
 		_clients[clientSocket] = new_client;
 	}
 	else

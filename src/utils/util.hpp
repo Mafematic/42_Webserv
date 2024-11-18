@@ -8,10 +8,9 @@ std::string &ltrim(std::string &str);
 std::string &rtrim(std::string &str);
 std::string &trim(std::string &str);
 std::vector<std::string> split(const std::string &str, char delimiter);
-std::vector<std::string> split(const std::string &str, char delimiter,
-	size_t maxTokens);
-std::vector<std::string> split(const std::string &str, char delimiter,
-	size_t maxTokens, size_t start_index);
+std::vector<std::string> split(const std::string &str, char delimiter, size_t maxTokens);
+std::vector<std::string> split(const std::string &str, char delimiter, size_t maxTokens, size_t start_index);
+
 std::string join_lines(const std::vector<std::string> &lines);
 int		find_first_opening_bracket_only_ws(const std::string &str,
 			size_t start_pos);

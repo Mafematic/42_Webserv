@@ -2,7 +2,7 @@
 
 Client::Client(){}
 
-Client::Client(int clientFd) : clientFd(clientFd), lastActivity(time(NULL)){}
+Client::Client(int clientFd, Serverhandler handler) : clientFd(clientFd), handler(handler),lastActivity(time(NULL)){}
 
 Client::Client(const Client &src)
 {

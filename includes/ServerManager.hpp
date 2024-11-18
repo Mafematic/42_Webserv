@@ -30,7 +30,7 @@ class ServerManager
 
 		int		createEpoll();
 		int		epollAddSockets();
-		void	acceptNewConnection();
+		void	acceptNewConnection(Serverhandler handler);
 		void	setNonBlocking(int clientSocket);
 		void	checkTimeout();
 };

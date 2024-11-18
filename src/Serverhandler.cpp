@@ -32,7 +32,7 @@ std::string Serverhandler::getIp() const
 void Serverhandler::setup()
 {
 	_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-	std::cout << RED << _serverSocket << RESET << std::endl;
+	std::cout << GREEN << "[Socket created] : " <<  _serverSocket << RESET << std::endl;
 	if (_serverSocket < 0)
 	{
 		std::cerr << "Error: socket creation failed" << std::endl;

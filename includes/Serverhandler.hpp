@@ -11,10 +11,10 @@ class Serverhandler
 		Serverhandler(int port, std::string ip);
 		Serverhandler(const Serverhandler &src);
 		~Serverhandler();
-		int		getSocket() const;
-		int		getPort() const;
-		std::string getIp() const;
-		void	setup();
+		int			getSocket() const;
+		int			getPort() const;
+		std::string	getIp() const;
+		void		setup();
 
 		std::vector<Server> _servers;
 	private:
