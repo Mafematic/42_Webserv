@@ -42,42 +42,62 @@ std::string ServerManager::readRequest(int clientSocket)
     return std::string(buffer);
 }
 
+int ServerManager::getContentLength(const std::string& request)
+{
+    size_t content_length_pos = request.find("Content-Length: ");
+    if (content_length_pos != std::string::npos)
+	{
+        size_t start = content_length_pos + 16; // "Content-Length: " length
+        size_t end = request.find("\r\n", start);
+        std::string content_length_str = request.substr(start, end - start);
+        int content_length;
+        std::istringstream(content_length_str) >> content_length;
+        return content_length;
+    }
+    return 0;
+}
+
+std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer, int contentLength)
+{
+    size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
+    int bodyReadSoFar = buffer.size() - headerEnd;  // Already read part of the body
+
+    while (bodyReadSoFar < contentLength)
+    {
+        char temp_buffer[BUFFER_SIZE];
+        int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
+
+        if (bytesRead > 0)
+        {
+            temp_buffer[bytesRead] = '\0';
+            buffer += temp_buffer;
+            bodyReadSoFar += bytesRead;
+        }
+        else
+        {
+            break; // Connection closed or error
+        }
+    }
+
+    return buffer;
+}
+
+
 void ServerManager::handleClient(int clientSocket)
 {
 	std::string buffer = readRequest(clientSocket);
     if (buffer.empty())
-        return;
-
-    std::string request(buffer);
-    size_t content_length_pos = request.find("Content-Length: ");
-	if (content_length_pos != std::string::npos)
 	{
-		size_t start = content_length_pos + 16; // "Content-Length: " length
-		size_t end = request.find("\r\n", start);
-		std::string content_length_str = request.substr(start, end - start);
-		int content_length;
-		std::istringstream(content_length_str) >> content_length;
-
-		// Ensure full body is read if Content-Length > bytes_read
-		while (request.size() < content_length + request.find("\r\n\r\n") + 4)
-		{
-			char temp_buffer[BUFFER_SIZE];
-			int extra_bytes = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
-			if (extra_bytes > 0)
-			{
-				temp_buffer[extra_bytes] = '\0';
-				request += temp_buffer;
-			}
-			else
-			{
-				break;
-			}
-		}
+        return;
 	}
+	int contentLength = getContentLength(buffer);
+    if (contentLength > 0)
+    {
+        buffer = readRequestBody(clientSocket, buffer, contentLength);
+    }
 
-	std::cout << "===== RECEIVED REQUEST =====" << std::endl;
-	std::cout << buffer << std::endl;
-
+    std::cout << "===== RECEIVED REQUEST =====" << std::endl;
+    std::cout << buffer << std::endl;
 	Request req(buffer); // Parse the raw request
 
 	std::string response = RequestRouter::route(req);
