@@ -110,6 +110,8 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
 
 void ServerManager::handleClient(int clientSocket, Server server)
 {
+	(void)server;
+
 	std::string buffer = readRequest(clientSocket);
 	if (buffer.empty())
 	{
