@@ -129,12 +129,12 @@ void ServerManager::run()
 	}
 
 	//print all serversockets with servers connected to them
-	for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
-	{
-		std::cout << YELLOW << "Servers on ServerFd: "<< it->getSocket() << RESET << std::endl;
-		for (std::vector<Server>::iterator it2 = it->_servers.begin(); it2 != it->_servers.end(); ++it2)
-			std::cout << *it2 << std::endl;
-	}
+	// for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
+	// {
+	// 	std::cout << YELLOW << "Servers on ServerFd: "<< it->getSocket() << RESET << std::endl;
+	// 	for (std::vector<Server>::iterator it2 = it->_servers.begin(); it2 != it->_servers.end(); ++it2)
+	// 		std::cout << *it2 << std::endl;
+	// }
 
 	std::cout << GREEN << "Server Manager started, waiting for connections..." << RESET << std::endl;
 
