@@ -4,49 +4,75 @@
 #include <sys/stat.h>
 #include "Request.hpp"
 
-FileUploader::FileUploader(const std::string &raw_request)
+FileUploader::FileUploader(const std::string &body)
 {
-    _boundary = _extractBoundary(raw_request);
-    _filename = _extractFilename(raw_request);
-    _fileContent = _extractFileContent(raw_request, _boundary);
+    _boundary = _extractBoundary(body);
+    _filename = _extractFilename(body);
+    _fileContent = _extractFileContent(body, _boundary);
 }
 
 
-std::string FileUploader::_extractBoundary(const std::string &rawRequest)
+std::string FileUploader::_extractBoundary(const std::string &body)
 {
-    size_t pos = rawRequest.find("boundary=");
+    size_t pos = body.find("Boundary");
     if (pos == std::string::npos)
         return "";
 
-    size_t start = pos + 9; // Move past "boundary="
-    size_t end = rawRequest.find("\r\n", start);
-    return rawRequest.substr(start, end - start); // No need for "--" prefix here.
+    size_t start = pos + 8; // Move past "Boundary"
+    size_t end = body.find("\r\n", start);
+    return body.substr(start, end - start);
 }
 
-std::string FileUploader::_extractFilename(const std::string &rawRequest)
+std::string FileUploader::_extractFilename(const std::string &body)
 {	
-    size_t pos = rawRequest.find("Content-Disposition: form-data;");
+    size_t pos = body.find("Content-Disposition: form-data;");
     if (pos == std::string::npos)
         return "unknown"; 
 
-    size_t filename_pos = rawRequest.find("filename=\"", pos);
+    size_t filename_pos = body.find("filename=\"", pos);
     if (filename_pos == std::string::npos)
         return "unknown";
 
     size_t start = filename_pos + 10; // "filename=\"" length
-    size_t end = rawRequest.find("\"", start);
+    size_t end = body.find("\"", start);
     if (end == std::string::npos)
         return "unknown";
 
-    return rawRequest.substr(start, end - start);
+    return body.substr(start, end - start);
 }
 
-
-std::string FileUploader::_extractFileContent(const std::string &rawRequest, const std::string &boundary_param)
+std::string FileUploader::_extractFileContent(const std::string &body, const std::string &boundary_param)
 {
-    size_t start = rawRequest.find("\r\n\r\n", rawRequest.find(boundary_param)) + 4; // Start of file content
-    size_t end = rawRequest.find(boundary_param, start) - 2;                          // End of file content (before next boundary)
-    return rawRequest.substr(start, end - start);
+    size_t content_type_pos = body.find("Content-Type:");
+    if (content_type_pos == std::string::npos)
+    {
+        std::cerr << "Content-Type not found!\n";
+        return "";
+    }
+
+    size_t content_start = body.find("\n", content_type_pos) + 1; 
+    if (content_start == std::string::npos)
+    {
+        std::cerr << "Start of content not found!\n";
+        return "";
+    }
+
+    // Skip the empty line after headers
+    content_start = body.find("\n", content_start) + 1;
+
+    // Find the next boundary
+    size_t content_end = body.find("\n------WebKitFormBoundary" + boundary_param, content_start);
+    if (content_end == std::string::npos)
+    {
+        std::cerr << "End boundary not found!\n";
+        return "";
+    }
+
+	if (content_end > 0 && body[content_end - 1] == '\r')
+    {
+        content_end -= 1;
+    }
+    return body.substr(content_start, content_end - content_start);
 }
 
 

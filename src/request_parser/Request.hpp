@@ -14,6 +14,7 @@ class Request
 		bool _valid;
 		std::string _error_message;
 		std::string _raw_request;
+		std::string _body;
 
 		void _parseRequest(const std::string &raw_request);
 		void _validateRequest();
@@ -28,6 +29,7 @@ class Request
 		std::string getErrorMessage() const;
 		std::string getRawRequest() const;
 		std::string getHeader(const std::string &key) const;
+		std::string getBody() const;
 
 };
 

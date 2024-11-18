@@ -75,27 +75,24 @@ int ServerManager::getContentLength(const std::string& request)
 std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer, int contentLength)
 {
 	size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
-	int bodyReadSoFar = buffer.size() - headerEnd;  // Already read part of the body
 
-	while (bodyReadSoFar < contentLength)
-	{
-		char temp_buffer[BUFFER_SIZE];
-		int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
+    while (buffer.size() < headerEnd + contentLength)
+    {
+        char temp_buffer[BUFFER_SIZE];
+        int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
 
-		if (bytesRead > 0)
-		{
-			temp_buffer[bytesRead] = '\0';
-			buffer += temp_buffer;
-			bodyReadSoFar += bytesRead;
-		}
-		else if (bytesRead == 0)
+        if (bytesRead > 0)
+        {
+            temp_buffer[bytesRead] = '\0';
+            buffer += temp_buffer;
+        }
+        else if (bytesRead == 0)
         {
             std::cerr << "Client closed the connection.\n";
             break;
         }
         else if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            std::cerr << "Read would block, retrying...\n";
             continue;
         }
         else
@@ -103,8 +100,10 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
             std::cerr << "Read error: " << strerror(errno) << " (errno: " << errno << ")\n";
             break;
         }
-	}
-	return buffer;
+    }
+	//std::cout << "+++++++" << buffer << std::endl;
+	std::cout << "+++++++" << std::endl;
+    return buffer;
 }
 
 

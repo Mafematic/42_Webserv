@@ -23,7 +23,7 @@ void Request::_parseRequest(const std::string &raw_request_param)
     }
 
     // Parse headers
-    while (std::getline(request_stream, line) && !line.empty())
+    while (std::getline(request_stream, line) && line != "\r")
     {
         size_t delimiter = line.find(":");
         if (delimiter != std::string::npos)
@@ -34,7 +34,14 @@ void Request::_parseRequest(const std::string &raw_request_param)
             _headers[key] = value;
         }
     }
+
+	// Read the rest as body
+    if (request_stream.peek() != std::istringstream::traits_type::eof())
+    {
+        _body = std::string(std::istreambuf_iterator<char>(request_stream), std::istreambuf_iterator<char>());
+    }
 }
+
 
 void Request::_validateRequest()
 {
@@ -113,4 +120,8 @@ std::string Request::getHeader(const std::string &key) const
     }
 }
 
+std::string Request::getBody() const
+{ 
+	return _body;
+}
 

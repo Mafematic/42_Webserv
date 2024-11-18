@@ -10,12 +10,12 @@ class FileUploader
         std::string _filename;
         std::string _fileContent;
 
-        std::string _extractBoundary(const std::string &raw_request);
-        std::string _extractFilename(const std::string &raw_request);
-        std::string _extractFileContent(const std::string &raw_request, const std::string &boundary);
+        std::string _extractBoundary(const std::string &body);
+        std::string _extractFilename(const std::string &body);
+        std::string _extractFileContent(const std::string &body, const std::string &boundary);
 
     public:
-		FileUploader(const std::string &raw_request);
+		FileUploader(const std::string &body);
         bool handleRequest();
 		bool isMalformed() const;
 		~FileUploader() {};
