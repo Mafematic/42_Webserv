@@ -12,6 +12,18 @@ Serverhandler::Serverhandler(const Serverhandler &src)
 	*this = src;
 }
 
+Serverhandler &Serverhandler::operator=(const Serverhandler &src)
+{
+	if (this == &src)
+		return *this;
+	_port = src._port;
+	_ip = src._ip;
+	_serverSocket = src._serverSocket;
+	_address = src._address;
+	_servers = src._servers;
+	return *this;
+}
+
 Serverhandler::~Serverhandler() {}
 
 int Serverhandler::getSocket() const

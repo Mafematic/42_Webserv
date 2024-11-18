@@ -108,7 +108,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
 }
 
 
-void ServerManager::handleClient(int clientSocket, std::vector<Server> server)
+void ServerManager::handleClient(int clientSocket, Server server)
 {
 	(void)server;
 
@@ -176,7 +176,7 @@ void ServerManager::run()
 					{
 						_clients[_eventFd].updateLastActivity();
 						//bis jetzt nur der case das ein Server einen client hat, deswegen wird nur der erst server uebergeben
-						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers);
+						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers.front());
 					}
 				}
 			}

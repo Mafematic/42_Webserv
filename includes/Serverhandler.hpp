@@ -10,6 +10,7 @@ class Serverhandler
 		Serverhandler();
 		Serverhandler(int port, std::string ip);
 		Serverhandler(const Serverhandler &src);
+		Serverhandler &operator=(const Serverhandler &src);
 		~Serverhandler();
 		int			getSocket() const;
 		int			getPort() const;

@@ -9,16 +9,17 @@ Client::Client(const Client &src)
 	*this = src;
 }
 
-Client::~Client(){}
-
 Client	&Client::operator=(const Client &src)
 {
 	if (this == &src)
 		return *this;
 	lastActivity = src.lastActivity;
 	clientFd = src.clientFd;
+	handler = src.handler;
 	return *this;
 }
+
+Client::~Client(){}
 
 time_t	Client::getLastActivity()
 {
