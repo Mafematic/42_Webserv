@@ -15,7 +15,7 @@ class ServerManager
 
 		void setup(std::string path);
 		void run();
-		void handleClient(int clientSocket);
+		void handleClient(int clientSocket, std::vector<Server> server);
 		std::string readRequest(int clientSocket);
 		int getContentLength(const std::string& request);
 		void sendClientResponse(int clientSocket, const std::string &response, bool keepAlive);

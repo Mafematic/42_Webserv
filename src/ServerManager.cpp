@@ -98,8 +98,11 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
 }
 
 
-void ServerManager::handleClient(int clientSocket)
+void ServerManager::handleClient(int clientSocket, std::vector<Server> server)
 {
+	//servervector is the storage of all servers which are connected to the clientSocket
+	//(probably helpfull to send the request to the rigth server and see if the requested location is valid!)
+
 	std::string buffer = readRequest(clientSocket);
 	if (buffer.empty())
 	{
@@ -163,7 +166,7 @@ void ServerManager::run()
 					if (_clients.find(_eventFd) != _clients.end())
 					{
 						_clients[_eventFd].updateLastActivity();
-						handleClient(_eventFd);
+						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers);
 					}
 				}
 			}

@@ -21,6 +21,7 @@ class Client
 		Client	&operator=(const Client &src);
 
 		time_t	getLastActivity();
+		Serverhandler getServerhandler();
 		int		getFd();
 		void	updateLastActivity();
 

@@ -25,6 +25,11 @@ time_t	Client::getLastActivity()
 	return lastActivity;
 }
 
+Serverhandler Client::getServerhandler()
+{
+	return handler;
+}
+
 int	Client::getFd()
 {
 	return clientFd;
