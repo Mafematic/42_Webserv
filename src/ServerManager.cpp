@@ -15,7 +15,7 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-void handleClient(int clientSocket)
+void ServerManager::handleClient(int clientSocket)
 {
 	char buffer[BUFFER_SIZE];
 
