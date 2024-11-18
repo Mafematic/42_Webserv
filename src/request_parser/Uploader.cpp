@@ -4,24 +4,49 @@
 #include <sys/stat.h>
 #include "Request.hpp"
 
+FileUploader::FileUploader(const std::string &raw_request)
+{
+    _boundary = _extractBoundary(raw_request);
+    _filename = _extractFilename(raw_request);
+    _fileContent = _extractFileContent(raw_request, _boundary);
+	std::cout << "Boundary: " << _boundary << std::endl;
+	std::cout << "Filename: " << _filename << std::endl;
+	std::cout << "File Content: " << _fileContent.substr(0, 50) << "..." << std::endl;
+
+}
+
+
 std::string FileUploader::_extractBoundary(const std::string &rawRequest)
 {
     size_t pos = rawRequest.find("boundary=");
     if (pos == std::string::npos)
         return "";
-    return "--" + rawRequest.substr(pos + 9, rawRequest.find("\r\n", pos) - (pos + 9));
+
+    size_t start = pos + 9; // Move past "boundary="
+    size_t end = rawRequest.find("\r\n", start);
+    return rawRequest.substr(start, end - start); // No need for "--" prefix here.
 }
 
 std::string FileUploader::_extractFilename(const std::string &rawRequest)
 {
-    size_t pos = rawRequest.find("Content-Disposition: form-data; name=\"file\"; filename=\"");
+	std::cout << " ++++++ Raw Request:\n" << rawRequest << std::endl;
+	
+    size_t pos = rawRequest.find("Content-Disposition: form-data;");
     if (pos == std::string::npos)
-        return "unknown"; // Default if no filename found
+        return "unknown"; 
 
-    size_t start = pos + 55; // Length of the search string above
+    size_t filename_pos = rawRequest.find("filename=\"", pos);
+    if (filename_pos == std::string::npos)
+        return "unknown";
+
+    size_t start = filename_pos + 10; // "filename=\"" length
     size_t end = rawRequest.find("\"", start);
+    if (end == std::string::npos)
+        return "unknown";
+
     return rawRequest.substr(start, end - start);
 }
+
 
 std::string FileUploader::_extractFileContent(const std::string &rawRequest, const std::string &boundary_param)
 {
@@ -30,12 +55,14 @@ std::string FileUploader::_extractFileContent(const std::string &rawRequest, con
     return rawRequest.substr(start, end - start);
 }
 
-bool FileUploader::handleRequest(const std::string &rawRequest)
-{
-    _boundary = _extractBoundary(rawRequest);
-    _filename = _extractFilename(rawRequest);
-    _fileContent = _extractFileContent(rawRequest, _boundary);
 
+
+bool FileUploader::handleRequest()
+{
+	if (_filename == "unknown")
+    {
+        return false;
+    }
     mkdir("uploads", 0777);
 
 	std::ofstream file(("uploads/" + _filename).c_str(), std::ios::binary);
@@ -49,4 +76,9 @@ bool FileUploader::handleRequest(const std::string &rawRequest)
     {
         return false;
     }
+}
+
+bool FileUploader::isMalformed() const
+{
+    return _boundary.empty() || _filename == "unknown";
 }

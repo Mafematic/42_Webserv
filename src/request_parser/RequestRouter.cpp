@@ -1,6 +1,7 @@
 #include "RequestRouter.hpp"
 #include "Uploader.hpp"
 #include "util.hpp"
+#include "webserv.hpp"
 
 #include <fstream>     // For std::ifstream
 #include <string>
@@ -14,18 +15,28 @@ std::string RequestRouter::route(const Request &req)
 
     if (req.getMethod() == "POST" && req.getPath() == "/upload")
     {
-        FileUploader uploader;
-        if (uploader.handleRequest(req.getRawRequest()))
+        int contentLength = 0;
+        std::istringstream iss(req.getHeader("Content-Length"));
+        if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > MAX_UPLOAD_SIZE)
+        {
+            return _serveFile("root/413.html", 413); // Payload too large
+        }
+
+        FileUploader uploader(req.getRawRequest());
+        if (uploader.isMalformed())
+        {
+            return _serveFile("root/400.html", 400); // Malformed request
+        }
+        
+        if (uploader.handleRequest())
         {
             return "HTTP/1.1 303 See Other\r\n"
                    "Location: /303.html\r\n"
                    "Connection: close\r\n"
                    "\r\n";
         }
-        else
-        {
-            return _serveFile("root/500.html", 500);
-        }
+
+        return _serveFile("root/500.html", 500); // Internal server error
     }
 
     if (req.getMethod() == "GET")
@@ -36,7 +47,6 @@ std::string RequestRouter::route(const Request &req)
         }
         return _serveFile("root" + req.getPath());
     }
-
     return _serveFile("root/404.html", 404);
 }
 

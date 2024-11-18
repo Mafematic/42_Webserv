@@ -88,12 +88,22 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
 			buffer += temp_buffer;
 			bodyReadSoFar += bytesRead;
 		}
-		else
-		{
-			break; // Connection closed or error
-		}
+		else if (bytesRead == 0)
+        {
+            std::cerr << "Client closed the connection.\n";
+            break;
+        }
+        else if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            std::cerr << "Read would block, retrying...\n";
+            continue;
+        }
+        else
+        {
+            std::cerr << "Read error: " << strerror(errno) << " (errno: " << errno << ")\n";
+            break;
+        }
 	}
-
 	return buffer;
 }
 
@@ -109,10 +119,11 @@ void ServerManager::handleClient(int clientSocket)
 	if (contentLength > 0)
 	{
 		buffer = readRequestBody(clientSocket, buffer, contentLength);
+		std::cout << "----------------" << buffer << std::endl;
 	}
 
-	std::cout << "===== RECEIVED REQUEST =====" << std::endl;
-	std::cout << buffer << std::endl;
+	//std::cout << "===== RECEIVED REQUEST =====" << std::endl;
+	//std::cout << buffer << std::endl;
 	Request req(buffer); // Parse the raw request
 
 	std::string response = RequestRouter::route(req);

@@ -12,6 +12,7 @@
 #define MAX_EVENTS 1000
 #define BUFFER_SIZE 1024
 #define CLIENT_TIMEOUT 12
+#define MAX_UPLOAD_SIZE 1000
 
 #include <iostream>
 #include <string>
