@@ -108,7 +108,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
 }
 
 
-void ServerManager::handleClient(int clientSocket)
+void ServerManager::handleClient(int clientSocket, Server server)
 {
 	std::string buffer = readRequest(clientSocket);
 	if (buffer.empty())
@@ -146,6 +146,7 @@ void ServerManager::run()
 
 	std::cout << GREEN << "Server Manager started, waiting for connections..." << RESET << std::endl;
 
+	Serverhandler tmp;
 	while (g_running)
 	{
 		int eventCount = epoll_wait(_epollFd, events, MAX_EVENTS, 1000);
@@ -159,18 +160,21 @@ void ServerManager::run()
 				for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
 				{
 					if (_eventFd == it->getSocket()) {
-						acceptNewConnection(*it);
 						isServerSocket = true;
+						tmp = *it;
 						break;
 					}
 				}
 
-				if (isServerSocket == false)
+				if (isServerSocket == true)
+					acceptNewConnection(tmp);
+				else
 				{
 					if (_clients.find(_eventFd) != _clients.end())
 					{
 						_clients[_eventFd].updateLastActivity();
-						handleClient(_eventFd);
+						//bis jetzt nur der case das ein Server einen client hat, deswegen wird nur der erst server uebergeben
+						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers[0]);
 					}
 				}
 			}

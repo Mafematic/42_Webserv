@@ -27,7 +27,7 @@ std::string RequestRouter::route(const Request &req)
         {
             return _serveFile("root/400.html", 400); // Malformed request
         }
-        
+
         if (uploader.handleRequest())
         {
             return "HTTP/1.1 303 See Other\r\n"
