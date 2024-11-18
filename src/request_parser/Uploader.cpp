@@ -9,10 +9,6 @@ FileUploader::FileUploader(const std::string &raw_request)
     _boundary = _extractBoundary(raw_request);
     _filename = _extractFilename(raw_request);
     _fileContent = _extractFileContent(raw_request, _boundary);
-	std::cout << "Boundary: " << _boundary << std::endl;
-	std::cout << "Filename: " << _filename << std::endl;
-	std::cout << "File Content: " << _fileContent.substr(0, 50) << "..." << std::endl;
-
 }
 
 
@@ -28,9 +24,7 @@ std::string FileUploader::_extractBoundary(const std::string &rawRequest)
 }
 
 std::string FileUploader::_extractFilename(const std::string &rawRequest)
-{
-	std::cout << " ++++++ Raw Request:\n" << rawRequest << std::endl;
-	
+{	
     size_t pos = rawRequest.find("Content-Disposition: form-data;");
     if (pos == std::string::npos)
         return "unknown"; 

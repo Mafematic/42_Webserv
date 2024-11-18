@@ -119,11 +119,7 @@ void ServerManager::handleClient(int clientSocket)
 	if (contentLength > 0)
 	{
 		buffer = readRequestBody(clientSocket, buffer, contentLength);
-		std::cout << "----------------" << buffer << std::endl;
 	}
-
-	//std::cout << "===== RECEIVED REQUEST =====" << std::endl;
-	//std::cout << buffer << std::endl;
 	Request req(buffer); // Parse the raw request
 
 	std::string response = RequestRouter::route(req);
