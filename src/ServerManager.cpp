@@ -102,6 +102,7 @@ void ServerManager::handleClient(int clientSocket, std::vector<Server> server)
 {
 	//servervector is the storage of all servers which are connected to the clientSocket
 	//(probably helpfull to send the request to the rigth server and see if the requested location is valid!)
+	(void)server;
 
 	std::string buffer = readRequest(clientSocket);
 	if (buffer.empty())
