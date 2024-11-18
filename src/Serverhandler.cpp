@@ -24,6 +24,11 @@ int Serverhandler::getPort() const
 	return _port;
 }
 
+std::string Serverhandler::getIp() const
+{
+	return _ip;
+}
+
 void Serverhandler::setup()
 {
 	_serverSocket = socket(AF_INET, SOCK_STREAM, 0);

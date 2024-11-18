@@ -12,9 +12,12 @@ class Serverhandler {
 		~Serverhandler();
 		int		getSocket() const;
 		int		getPort() const;
+		std::string getIp() const;
 		void	setup();
-	private:
+
 		std::vector<Server> _servers;
+	private:
+
 		struct sockaddr_in _address;
 		int	_serverSocket;
 		int	_port;

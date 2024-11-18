@@ -4,14 +4,28 @@
 
 void ServerManager::setup(std::string config_path)
 {
+	int	duplicate_flag = false;
 	std::vector<Server> _server_config;
 	Config_Parser parser(config_path);
 
 	_server_config = parser.parse_config();
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
-		Serverhandler server(it->get_listen().port, it->get_listen().ip);
-		serverhandler.push_back(server);
+		for(std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
+		{
+			if (it->get_listen().port == tmp_it->getPort() && it->get_listen().ip == tmp_it->getIp())
+			{
+				tmp_it->_servers.push_back(*it);
+				duplicate_flag = true;
+				break ;
+			}
+		}
+		if (duplicate_flag == false)
+		{
+			Serverhandler server(it->get_listen().port, it->get_listen().ip);
+			server._servers.push_back(*it);
+			serverhandler.push_back(server);
+		}
 	}
 }
 
@@ -114,6 +128,14 @@ void ServerManager::run()
 		return;
 	}
 
+	//print all serversockets with servers connected to them
+	for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
+	{
+		std::cout << YELLOW << "Servers on ServerFd: "<< it->getSocket() << RESET << std::endl;
+		for (std::vector<Server>::iterator it2 = it->_servers.begin(); it2 != it->_servers.end(); ++it2)
+			std::cout << *it2 << std::endl;
+	}
+
 	std::cout << GREEN << "Server Manager started, waiting for connections..." << RESET << std::endl;
 
 	while (g_running)
@@ -148,6 +170,7 @@ void ServerManager::run()
 		}
 		checkTimeout();
 	}
+	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }
 
 void	ServerManager::checkTimeout()
