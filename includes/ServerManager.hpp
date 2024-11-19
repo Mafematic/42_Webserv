@@ -3,6 +3,8 @@
 
 #include "Client.hpp"
 #include "Serverhandler.hpp"
+#include "RequestRouter.hpp"
+#include "Config_Parser.hpp"
 
 extern bool g_running;
 
@@ -15,11 +17,12 @@ class ServerManager
 
 		void setup(std::string path);
 		void run();
-		void handleClient(int clientSocket, Server server);
+		void handleClient(int clientSocket, std::vector<Server> servers);
 		std::string readRequest(int clientSocket);
 		int getContentLength(const std::string& request);
 		void sendClientResponse(int clientSocket, const std::string &response, bool keepAlive);
 		std::string readRequestBody(int clientSocket, std::string &buffer, int contentLength);
+		Server	getServer(std::vector<Server> servers, Request req);
 
 	private:
 		std::vector<Serverhandler>	serverhandler;

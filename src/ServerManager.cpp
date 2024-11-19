@@ -1,6 +1,4 @@
 #include "ServerManager.hpp"
-#include "RequestRouter.hpp"
-#include "Config_Parser.hpp"
 
 void ServerManager::setup(std::string config_path)
 {
@@ -11,6 +9,11 @@ void ServerManager::setup(std::string config_path)
 	_server_config = parser.parse_config();
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
+		//print server_name
+		// std::vector<std::string> name = it->get_server_name();
+		// for (std::vector<std::string>::iterator it2 = name.begin(); it2 != name.end(); ++it2)
+		// 	std::cout << GREEN << "Servername: " << *it2 << RESET << std::endl;
+
 		for(std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
 		{
 			if (it->get_listen().port == tmp_it->getPort() && it->get_listen().ip == tmp_it->getIp())
@@ -106,10 +109,35 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
     return buffer;
 }
 
-void ServerManager::handleClient(int clientSocket, Server server)
+Server ServerManager::getServer(std::vector<Server> servers, Request req)
 {
-	(void)server;
+	Server server;
+	if (servers.size() == 1)
+	{
+		std::cout << RED << "[DEBUG] Only one server for client" << RESET << std::endl;
+		server = servers[0];
+	}
+	else
+	{
+		std::cout << RED << "[DEBUG] Multiple servers for client" << RESET << std::endl;
+		server = servers[0];
+		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
+		{
+			std::vector<std::string> server_names = it->get_server_name();
+			for (std::vector<std::string>::iterator it2 = server_names.begin(); it2 != server_names.end(); ++it2)
+			{
+				std::string host = req.getHeader("Host");
+				host = host.substr(0, host.find(":"));
+				if (host == *it2)
+					return *it;
+			}
+		}
+	}
+	return server;
+}
 
+void ServerManager::handleClient(int clientSocket, std::vector<Server> servers)
+{
 	std::string buffer = readRequest(clientSocket);
 	if (buffer.empty())
 	{
@@ -121,6 +149,10 @@ void ServerManager::handleClient(int clientSocket, Server server)
 		buffer = readRequestBody(clientSocket, buffer, contentLength);
 	}
 	Request req(buffer); // Parse the raw request
+
+	//gets the server that the client is connected to, if there are multiple servers,
+	//it will get the server based on the host header
+	Server server = getServer(servers, req);
 
 	std::string response = RequestRouter::route(req);
 
@@ -175,8 +207,7 @@ void ServerManager::run()
 					{
 						_clients[_eventFd].updateLastActivity();
 						std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
-						//bis jetzt nur der case das ein Server einen client hat, deswegen wird nur der erst server uebergeben
-						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers.front());
+						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers);
 					}
 				}
 			}
