@@ -106,26 +106,6 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
     return buffer;
 }
 
-void printStringWithEscapes(const std::string& str) {
-    for (size_t i = 0; i < str.length(); ++i) {
-        char c = str[i];
-
-        // Check for specific escape sequences and print them as text
-        if (c == '\n') {
-            std::cout << "\\n";  // Print \n as text
-        } else if (c == '\t') {
-            std::cout << "\\t";  // Print \t as text
-        } else if (c == '\r') {
-            std::cout << "\\r";  // Print \r as text
-        } else if (c == '\\') {
-            std::cout << "\\\\";  // Escape backslash
-        } else {
-            std::cout << c;  // Print normal characters as-is
-        }
-    }
-    std::cout << std::endl;
-}
-
 void ServerManager::handleClient(int clientSocket, Server server)
 {
 	(void)server;
