@@ -123,7 +123,7 @@ void Server_Creator::server_assign_server_name(Server &new_server,
 		config_defs.insert(config_defs.end(),
 							default_server_name.begin(),
 							default_server_name.end());
-		new_server.set_index(config_defs);
+		new_server.set_server_name(config_defs);
 	}
 }
 
