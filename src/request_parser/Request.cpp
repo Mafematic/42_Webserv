@@ -31,6 +31,9 @@ void Request::_parseRequest(const std::string &raw_request_param)
             std::string key = line.substr(0, delimiter);
             std::string value = line.substr(delimiter + 1);
             value.erase(0, value.find_first_not_of(" \t"));
+
+            value.erase(value.find_last_not_of(" \t\r") + 1);
+
             _headers[key] = value;
         }
     }
@@ -121,7 +124,7 @@ std::string Request::getHeader(const std::string &key) const
 }
 
 std::string Request::getBody() const
-{ 
+{
 	return _body;
 }
 

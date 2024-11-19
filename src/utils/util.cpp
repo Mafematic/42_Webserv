@@ -29,6 +29,7 @@ std::string &trim(std::string &str)
 {
 	return (ltrim(rtrim(str)));
 }
+
 std::vector<std::string> split(const std::string &str, char delimiter)
 {
 	std::vector<std::string> tokens;

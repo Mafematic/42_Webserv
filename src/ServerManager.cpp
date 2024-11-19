@@ -106,6 +106,25 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
     return buffer;
 }
 
+void printStringWithEscapes(const std::string& str) {
+    for (size_t i = 0; i < str.length(); ++i) {
+        char c = str[i];
+
+        // Check for specific escape sequences and print them as text
+        if (c == '\n') {
+            std::cout << "\\n";  // Print \n as text
+        } else if (c == '\t') {
+            std::cout << "\\t";  // Print \t as text
+        } else if (c == '\r') {
+            std::cout << "\\r";  // Print \r as text
+        } else if (c == '\\') {
+            std::cout << "\\\\";  // Escape backslash
+        } else {
+            std::cout << c;  // Print normal characters as-is
+        }
+    }
+    std::cout << std::endl;
+}
 
 void ServerManager::handleClient(int clientSocket, Server server)
 {
@@ -126,6 +145,7 @@ void ServerManager::handleClient(int clientSocket, Server server)
 	std::string response = RequestRouter::route(req);
 
 	bool keepAlive = req.getHeader("Connection") == "keep-alive";
+
 	sendClientResponse(clientSocket, response, keepAlive);
 }
 
@@ -174,6 +194,7 @@ void ServerManager::run()
 					if (_clients.find(_eventFd) != _clients.end())
 					{
 						_clients[_eventFd].updateLastActivity();
+						std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
 						//bis jetzt nur der case das ein Server einen client hat, deswegen wird nur der erst server uebergeben
 						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers.front());
 					}
