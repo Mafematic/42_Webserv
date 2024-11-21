@@ -1,11 +1,8 @@
 #include "Server.hpp"
 #include "external.hpp"
 
-Server::Server()
-	: _root("./"),
-		_autoindex(false),
-		_client_max_body_size(1024 * 1024),
-		_return_is_defined(false)
+Server::Server() : _root("./"), _autoindex(false), _client_max_body_size(1024
+	* 1024), _return_is_defined(false)
 {
 	this->set_listen(4000, "0.0.0.0");
 	this->_index.push_back("index.html");
@@ -83,7 +80,7 @@ void Server::set_server_name(std::vector<std::string> new_val)
 }
 
 void Server::set_error_pages(std::map<std::string,
-										std::vector<std::string> > new_val)
+	std::vector<std::string> > new_val)
 {
 	this->_error_pages = new_val;
 }
@@ -113,6 +110,16 @@ void Server::add_route(Route new_val)
 util::Address Server::get_listen() const
 {
 	return (this->_listen);
+}
+
+std::string Server::get_ip() const
+{
+	return (this->_listen.ip);
+}
+
+int Server::get_port() const
+{
+	return (this->_listen.port);
 }
 
 std::string Server::get_root() const
@@ -159,12 +166,9 @@ util::Return_Definition Server::get_return() const
 	return (this->_return);
 }
 
-
 std::ostream &operator<<(std::ostream &os, Server const &server)
 {
-
 	std::map<std::string, std::string> col_map = util::get_color_map();
-
 	os << std::endl;
 	os << "*************Server****************";
 	os << std::endl;
@@ -250,18 +254,15 @@ std::ostream &operator<<(std::ostream &os, Server const &server)
 	}
 	os << std::endl;
 	os << col_map["red"];
-	os << "[map<string, vector<string>>] ";
+	os << "[map<string, vector<string> >] ";
 	os << col_map["green"];
 	os << "error_pages: ";
 	os << col_map["reset"];
 	os << std::endl;
 	std::map<std::string,
-				std::vector<std::string> >
-		error_pages = server.get_error_pages();
+		std::vector<std::string> > error_pages = server.get_error_pages();
 	for (std::map<std::string,
-					std::vector<std::string> >::iterator it = error_pages.begin();
-			it != error_pages.end();
-			++it)
+		std::vector<std::string> >::iterator it = error_pages.begin(); it != error_pages.end(); ++it)
 	{
 		os << it->first << " ";
 		const std::vector<std::string> &values = it->second;
@@ -272,7 +273,7 @@ std::ostream &operator<<(std::ostream &os, Server const &server)
 		os << std::endl;
 	}
 	std::vector<Route> server_routes = server.get_routes();
-		for (std::vector<Route>::iterator vec_it = server_routes.begin(); vec_it != server_routes.end(); ++vec_it)
+	for (std::vector<Route>::iterator vec_it = server_routes.begin(); vec_it != server_routes.end(); ++vec_it)
 	{
 		os << *vec_it;
 	}

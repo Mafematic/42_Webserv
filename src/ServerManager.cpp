@@ -13,7 +13,7 @@ void ServerManager::setup(std::string config_path)
 	{
 		for(std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
 		{
-			if (it->get_listen().port == tmp_it->getPort() && it->get_listen().ip == tmp_it->getIp())
+			if (it->get_port() == tmp_it->getPort() && it->get_ip() == tmp_it->getIp())
 			{
 				tmp_it->_servers.push_back(*it);
 				duplicate_flag = true;
@@ -23,7 +23,7 @@ void ServerManager::setup(std::string config_path)
 		}
 		if (duplicate_flag == false)
 		{
-			Serverhandler server(it->get_listen().port, it->get_listen().ip);
+			Serverhandler server(it->get_port(), it->get_ip());
 			server._servers.push_back(*it);
 			serverhandler.push_back(server);
 		}
