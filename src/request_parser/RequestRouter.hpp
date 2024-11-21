@@ -12,7 +12,7 @@ public:
 
 private:
 
-    static std::string _serveFile(const std::string &filepath, int statusCode = 200);
+    static std::string _serveFile(const std::string &filepath, int statusCode, const Request &req);
 };
 
 #endif

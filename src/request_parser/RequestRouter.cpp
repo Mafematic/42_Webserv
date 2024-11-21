@@ -10,7 +10,7 @@ std::string RequestRouter::route(const Request &req)
 {
     if (!req.isValid()) // Early exit for invalid requests
     {
-        return _serveFile("root/400.html", 400);
+        return _serveFile("root/400.html", 400, req);
     }
 
     if (req.getMethod() == "POST" && req.getPath() == "/upload")
@@ -19,13 +19,13 @@ std::string RequestRouter::route(const Request &req)
         std::istringstream iss(req.getHeader("Content-Length"));
         if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > MAX_UPLOAD_SIZE)
         {
-            return _serveFile("root/413.html", 413); // Payload too large
+            return _serveFile("root/413.html", 413, req); // Payload too large
         }
 
         FileUploader uploader(req.getBody());
         if (uploader.isMalformed())
         {
-            return _serveFile("root/400.html", 400); // Malformed request
+            return _serveFile("root/400.html", 400, req); // Malformed request
         }
 
         if (uploader.handleRequest())
@@ -36,26 +36,26 @@ std::string RequestRouter::route(const Request &req)
                    "\r\n";
         }
 
-        return _serveFile("root/500.html", 500); // Internal server error
+        return _serveFile("root/500.html", 500, req); // Internal server error
     }
 
     if (req.getMethod() == "GET")
     {
         if (req.getPath() == "/")
         {
-            return _serveFile("root/index.html");
+            return _serveFile("root/index.html", 200, req);
         }
-        return _serveFile("root" + req.getPath());
+        return _serveFile("root" + req.getPath(), 200, req);
     }
-    return _serveFile("root/404.html", 404);
+    return _serveFile("root/404.html", 404, req);
 }
 
-std::string RequestRouter::_serveFile(const std::string &filepath, int statusCode)
+std::string RequestRouter::_serveFile(const std::string &filepath, int statusCode, const Request &req)
 {
     std::ifstream file(filepath.c_str());
     if (!file.is_open())
     {
-        return _serveFile("root/404.html", 404);
+        return _serveFile("root/404.html", 404, req);
     }
 
     std::stringstream buffer;
@@ -79,5 +79,20 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
     default:
         statusLine = "HTTP/1.1 200 OK";
     }
-    return statusLine + "\r\nContent-Type: text/html\r\nContent-Length: " + util::to_string(content.size()) + "\r\n\r\n" + content;
+	statusLine += "\r\nContent-Type: text/html";
+	statusLine += "\r\nContent-Length: ";
+	statusLine += util::to_string(content.size());
+	if (req.getKeepAlive())
+    {
+        statusLine += "\r\nConnection: keep-alive";
+    }
+    else
+    {
+        statusLine += "\r\nConnection: close";
+    }
+    statusLine += "\r\n\r\n";
+    statusLine += content;
+
+    return statusLine;
 }
+

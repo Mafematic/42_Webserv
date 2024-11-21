@@ -30,16 +30,12 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-void ServerManager::sendClientResponse(int clientSocket, const std::string &response, bool keepAlive)
+void ServerManager::sendClientResponse(int clientSocket, std::string &response)
 {
 	ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0); // 0 = no flags
 	if (bytesSent < 0)
 	{
 		perror("Failed to send response");
-	}
-	if (!keepAlive)
-	{
-		close(clientSocket);
 	}
 }
 
@@ -101,8 +97,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
             break;
         }
     }
-	//std::cout << "+++++++" << buffer << std::endl;
-	std::cout << "+++++++" << std::endl;
+	//std::cout << "++++" << buffer << std::endl;
     return buffer;
 }
 
@@ -123,10 +118,8 @@ void ServerManager::handleClient(int clientSocket, Server server)
 	Request req(buffer); // Parse the raw request
 
 	std::string response = RequestRouter::route(req);
-
-	bool keepAlive = req.getHeader("Connection") == "keep-alive";
-
-	sendClientResponse(clientSocket, response, keepAlive);
+	std::cout << "++++ Response" << response << std::endl; 
+	sendClientResponse(clientSocket, response);
 }
 
 void ServerManager::run()

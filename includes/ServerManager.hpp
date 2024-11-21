@@ -18,7 +18,7 @@ class ServerManager
 		void handleClient(int clientSocket, Server server);
 		std::string readRequest(int clientSocket);
 		int getContentLength(const std::string& request);
-		void sendClientResponse(int clientSocket, const std::string &response, bool keepAlive);
+		void sendClientResponse(int clientSocket, std::string &response);
 		std::string readRequestBody(int clientSocket, std::string &buffer, int contentLength);
 
 	private:

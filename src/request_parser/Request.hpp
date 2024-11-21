@@ -16,6 +16,8 @@ class Request
 		std::string _raw_request;
 		std::string _body;
 
+		bool _keepAlive;
+
 		void _parseRequest(const std::string &raw_request);
 		void _validateRequest();
 
@@ -30,6 +32,9 @@ class Request
 		std::string getRawRequest() const;
 		std::string getHeader(const std::string &key) const;
 		std::string getBody() const;
+
+		void setKeepAlive(bool keepAlive);
+    	bool getKeepAlive() const; 
 
 };
 
