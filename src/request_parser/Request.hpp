@@ -18,7 +18,7 @@ class Request
 
 		bool _keepAlive;
 
-		void _parseRequest(const std::string &raw_request);
+		void _parseRequest();
 		void _validateRequest();
 
 	public:
