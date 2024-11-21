@@ -101,8 +101,8 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
             break;
         }
     }
-	//std::cout << "+++++++" << buffer << std::endl;
-	std::cout << "+++++++" << std::endl;
+	std::cout << "+++++++" << buffer << std::endl;
+	//std::cout << "+++++++" << std::endl;
     return buffer;
 }
 

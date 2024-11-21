@@ -6,13 +6,13 @@
 Request::Request(const std::string &raw_request)
     : _valid(true), _raw_request(raw_request)
 {
-    _parseRequest(raw_request);
+    _parseRequest();
     _validateRequest();
 }
 
-void Request::_parseRequest(const std::string &raw_request_param)
+void Request::_parseRequest()
 {
-    std::istringstream request_stream(raw_request_param);
+    std::istringstream request_stream(this->_raw_request);
     std::string line;
 
     // Parse the request line

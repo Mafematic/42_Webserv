@@ -16,7 +16,7 @@ class Request
 		std::string _raw_request;
 		std::string _body;
 
-		void _parseRequest(const std::string &raw_request);
+		void _parseRequest();
 		void _validateRequest();
 
 	public:
