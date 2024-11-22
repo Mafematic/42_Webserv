@@ -56,18 +56,15 @@ std::string RequestRouter::route(const Request &req)
 		{
         	if (remove(filepath.c_str()) == 0)
 			{
-				std::cout << "In here 200" << std::endl;
             	return _serveFile("root/200.html", 200, req); // Serve a success page
         	}
 			else
 			{
-				std::cout << "In here 500" << std::endl;
             	return _serveFile("root/500.html", 500, req); // Internal server error
         	}
     	}
 		else
 		{
-			std::cout << "In here 404" << std::endl;
         	return _serveFile("root/404.html", 404, req); // File not found
    		}
 	}
@@ -78,13 +75,17 @@ std::string RequestRouter::route(const Request &req)
 std::string RequestRouter::_serveFile(const std::string &filepath, int statusCode, const Request &req)
 {
 	std::string content = "";
-    std::ifstream file(filepath.c_str());
-    if (file.is_open())
+
+    if (req.getMethod() != "DELETE")
     {
-        std::stringstream buffer;
-		buffer << file.rdbuf();
-		file.close();
-		content = buffer.str();
+        std::ifstream file(filepath.c_str());
+        if (file.is_open())
+        {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            file.close();
+            content = buffer.str();
+        }
     }
     std::string statusLine;
     switch (statusCode)
