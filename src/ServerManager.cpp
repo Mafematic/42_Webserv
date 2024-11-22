@@ -39,18 +39,30 @@ void ServerManager::sendClientResponse(int clientSocket, std::string &response)
 	}
 }
 
-std::string ServerManager::readRequest(int clientSocket)
+std::basic_string<char> ServerManager::readRequest(int clientSocket)
 {
-	char buffer[BUFFER_SIZE];
-	int bytes_read = read(clientSocket, buffer, sizeof(buffer) - 1);
-	if (bytes_read <= 0)
-	{
-		perror("Failed to read request");
-		close(clientSocket);
-		return "";
-	}
-	buffer[bytes_read] = '\0';
-	return std::string(buffer);
+	std::basic_string<char> buffer;               // Binary-safe buffer
+	std::vector<char> tempBuffer(BUFFER_SIZE);    // Temporary buffer for socket read
+
+    while (true)
+    {
+        int bytes_read = read(clientSocket, tempBuffer.data(), tempBuffer.size());
+        if (bytes_read <= 0)
+        {
+            perror("Failed to read request");
+            close(clientSocket);
+            return "";
+        }
+        
+        buffer.append(tempBuffer.data(), bytes_read);
+
+        if (buffer.find("\r\n\r\n") != std::basic_string<char>::npos)
+        {
+            break;
+        }
+    }
+
+    return buffer;
 }
 
 int ServerManager::getContentLength(const std::string& request)
@@ -68,19 +80,20 @@ int ServerManager::getContentLength(const std::string& request)
 	return 0;
 }
 
-std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer, int contentLength)
+std::basic_string<char> ServerManager::readRequestBody(int clientSocket, std::basic_string<char> &buffer, int contentLength)
 {
-	size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
+    size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
 
+    // Temporary buffer for reading chunks
+    std::vector<char> tempBuffer(BUFFER_SIZE);
+    
     while (buffer.size() < headerEnd + contentLength)
     {
-        char temp_buffer[BUFFER_SIZE];
-        int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
-
+        int bytesRead = read(clientSocket, tempBuffer.data(), tempBuffer.size());
+        
         if (bytesRead > 0)
         {
-            temp_buffer[bytesRead] = '\0';
-            buffer += temp_buffer;
+            buffer.append(tempBuffer.data(), bytesRead); // Append only the bytes read
         }
         else if (bytesRead == 0)
         {
@@ -89,7 +102,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
         }
         else if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            continue;
+            continue; // Non-blocking mode: retry if no data is available
         }
         else
         {
@@ -97,7 +110,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
             break;
         }
     }
-	//std::cout << "++++" << buffer << std::endl;
+
     return buffer;
 }
 

@@ -10,9 +10,9 @@
 #define PORT2 8081;
 
 #define MAX_EVENTS 1000
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 1000000
 #define CLIENT_TIMEOUT 12
-#define MAX_UPLOAD_SIZE 1000
+#define MAX_UPLOAD_SIZE 1000000
 
 #include <iostream>
 #include <string>
