@@ -118,7 +118,7 @@ void ServerManager::handleClient(int clientSocket, Server server)
 	Request req(buffer); // Parse the raw request
 
 	std::string response = RequestRouter::route(req);
-	std::cout << "++++ Response" << response << std::endl; 
+	//std::cout << "++++ Response" << response << std::endl; 
 	sendClientResponse(clientSocket, response);
 }
 
