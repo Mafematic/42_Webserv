@@ -62,29 +62,29 @@
         <div id="result" class="result"></div>
     </div>
 
-    <script>
-        function sendDeleteRequest() {
-            const filePath = document.getElementById('file-path').value;
-            if (!filePath) {
-                document.getElementById('result').innerText = 'Error: Please provide a file path.';
-                return;
-            }
-
-            fetch(filePath, { method: 'DELETE' })
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById('result').innerText = 'File deleted successfully.';
-                    } else {
-                        return response.text().then(err => {
-                            throw new Error(`Failed to delete file: ${response.status} - ${err}`);
-                        });
-                    }
-                })
-                .catch(err => {
-                    document.getElementById('result').innerText = `Error: ${err.message}`;
-                });
+	<script>
+    function sendDeleteRequest() {
+        const filePath = document.getElementById('file-path').value;
+        if (!filePath) {
+            document.getElementById('result').innerText = 'Error: Please provide a file path.';
+            return;
         }
-    </script>
+
+		fetch(filePath, { method: 'DELETE' })
+    .then(response => {
+        if (response.ok) {
+            alert('File deleted successfully.');
+        } else if (response.status === 404) {
+            alert('File does not exist. Try again.');
+        } else if (response.status === 500) {
+            window.location.href = '/500.html';
+        }
+    })
+    .catch(err => {
+        document.getElementById('result').innerText = `Error: ${err.message}`;
+    });
+    }
+</script>
 </body>
 
 </html>
