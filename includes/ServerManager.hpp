@@ -28,6 +28,8 @@ class ServerManager
 		int							_epollFd;
 		int							_eventFd;
 
+		// std::map<int, std::basic_string<char> > _clientBuffers;
+
 		int		createEpoll();
 		int		epollAddSockets();
 		void	acceptNewConnection(Serverhandler handler);
