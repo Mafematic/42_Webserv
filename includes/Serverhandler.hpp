@@ -14,12 +14,14 @@ class Serverhandler
 		~Serverhandler();
 		int			getSocket() const;
 		int			getPort() const;
+		std::vector<Server>	getServers() const;
+		void	addServer(Server server);
 		std::string	getIp() const;
 		void		setup();
 
-		std::vector<Server> _servers;
 	private:
 		struct sockaddr_in _address;
+		std::vector<Server> _servers;
 		int	_serverSocket;
 		int	_port;
 		std::string _ip;

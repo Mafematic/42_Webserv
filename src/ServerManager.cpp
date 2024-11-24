@@ -18,7 +18,7 @@ void ServerManager::setup(std::string config_path)
 		{
 			if (it->get_port() == tmp_it->getPort() && it->get_ip() == tmp_it->getIp())
 			{
-				tmp_it->_servers.push_back(*it);
+				tmp_it->addServer(*it);
 				duplicate_flag = true;
 				std::cout << YELLOW << "[Serverduplicat detected] added to existing socket: " << tmp_it->getSocket() << RESET << std::endl;
 				break ;
@@ -27,7 +27,7 @@ void ServerManager::setup(std::string config_path)
 		if (duplicate_flag == false)
 		{
 			Serverhandler server(it->get_port(), it->get_ip());
-			server._servers.push_back(*it);
+			server.addServer(*it);
 			serverhandler.push_back(server);
 		}
 	}
@@ -214,7 +214,7 @@ void ServerManager::run()
 					{
 						_clients[_eventFd].updateLastActivity();
 						std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
-						handleClient(_eventFd, _clients[_eventFd].getServerhandler()._servers);
+						handleClient(_eventFd, _clients[_eventFd].getServerhandler().getServers());
 					}
 				}
 			}
