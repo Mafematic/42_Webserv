@@ -16,7 +16,7 @@ void ServerManager::setup(std::string config_path)
 
 		for(std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
 		{
-			if (it->get_listen().port == tmp_it->getPort() && it->get_listen().ip == tmp_it->getIp())
+			if (it->get_port() == tmp_it->getPort() && it->get_ip() == tmp_it->getIp())
 			{
 				tmp_it->_servers.push_back(*it);
 				duplicate_flag = true;
@@ -26,38 +26,46 @@ void ServerManager::setup(std::string config_path)
 		}
 		if (duplicate_flag == false)
 		{
-			Serverhandler server(it->get_listen().port, it->get_listen().ip);
+			Serverhandler server(it->get_port(), it->get_ip());
 			server._servers.push_back(*it);
 			serverhandler.push_back(server);
 		}
 	}
 }
 
-void ServerManager::sendClientResponse(int clientSocket, const std::string &response, bool keepAlive)
+void ServerManager::sendClientResponse(int clientSocket, std::string &response)
 {
 	ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0); // 0 = no flags
 	if (bytesSent < 0)
 	{
 		perror("Failed to send response");
 	}
-	if (!keepAlive)
-	{
-		close(clientSocket);
-	}
 }
 
-std::string ServerManager::readRequest(int clientSocket)
+std::basic_string<char> ServerManager::readRequest(int clientSocket)
 {
-	char buffer[BUFFER_SIZE];
-	int bytes_read = read(clientSocket, buffer, sizeof(buffer) - 1);
-	if (bytes_read <= 0)
-	{
-		perror("Failed to read request");
-		close(clientSocket);
-		return "";
-	}
-	buffer[bytes_read] = '\0';
-	return std::string(buffer);
+	std::basic_string<char> buffer;               // Binary-safe buffer
+	std::vector<char> tempBuffer(BUFFER_SIZE);    // Temporary buffer for socket read
+
+    while (true)
+    {
+        int bytes_read = read(clientSocket, tempBuffer.data(), tempBuffer.size());
+        if (bytes_read <= 0)
+        {
+            perror("Failed to read request");
+            close(clientSocket);
+            return "";
+        }
+
+        buffer.append(tempBuffer.data(), bytes_read);
+
+        if (buffer.find("\r\n\r\n") != std::basic_string<char>::npos)
+        {
+            break;
+        }
+    }
+
+    return buffer;
 }
 
 int ServerManager::getContentLength(const std::string& request)
@@ -75,19 +83,20 @@ int ServerManager::getContentLength(const std::string& request)
 	return 0;
 }
 
-std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer, int contentLength)
+std::basic_string<char> ServerManager::readRequestBody(int clientSocket, std::basic_string<char> &buffer, int contentLength)
 {
-	size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
+    size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
+
+    // Temporary buffer for reading chunks
+    std::vector<char> tempBuffer(BUFFER_SIZE);
 
     while (buffer.size() < headerEnd + contentLength)
     {
-        char temp_buffer[BUFFER_SIZE];
-        int bytesRead = read(clientSocket, temp_buffer, sizeof(temp_buffer) - 1);
+        int bytesRead = read(clientSocket, tempBuffer.data(), tempBuffer.size());
 
         if (bytesRead > 0)
         {
-            temp_buffer[bytesRead] = '\0';
-            buffer += temp_buffer;
+            buffer.append(tempBuffer.data(), bytesRead); // Append only the bytes read
         }
         else if (bytesRead == 0)
         {
@@ -96,7 +105,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
         }
         else if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
-            continue;
+            continue; // Non-blocking mode: retry if no data is available
         }
         else
         {
@@ -104,8 +113,7 @@ std::string ServerManager::readRequestBody(int clientSocket, std::string &buffer
             break;
         }
     }
-	//std::cout << "+++++++" << buffer << std::endl;
-	std::cout << "+++++++" << std::endl;
+
     return buffer;
 }
 
@@ -138,6 +146,7 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 
 void ServerManager::handleClient(int clientSocket, std::vector<Server> servers)
 {
+	//std::basic_string<char> &buffer = _clientBuffers[clientSocket];
 	std::string buffer = readRequest(clientSocket);
 	if (buffer.empty())
 	{
@@ -155,10 +164,8 @@ void ServerManager::handleClient(int clientSocket, std::vector<Server> servers)
 	Server server = getServer(servers, req);
 
 	std::string response = RequestRouter::route(req);
-
-	bool keepAlive = req.getHeader("Connection") == "keep-alive";
-
-	sendClientResponse(clientSocket, response, keepAlive);
+	//std::cout << "++++ Response" << response << std::endl;
+	sendClientResponse(clientSocket, response);
 }
 
 void ServerManager::run()

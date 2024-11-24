@@ -19,7 +19,6 @@ class Serverhandler
 
 		std::vector<Server> _servers;
 	private:
-
 		struct sockaddr_in _address;
 		int	_serverSocket;
 		int	_port;

@@ -1,18 +1,19 @@
 #include "Request.hpp"
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 
 Request::Request(const std::string &raw_request)
-    : _valid(true), _raw_request(raw_request)
+    : _valid(true), _raw_request(raw_request), _keepAlive(true)
 {
-    _parseRequest(raw_request);
+    _parseRequest();
     _validateRequest();
 }
 
-void Request::_parseRequest(const std::string &raw_request_param)
+void Request::_parseRequest()
 {
-    std::istringstream request_stream(raw_request_param);
+    std::istringstream request_stream(this->_raw_request);
     std::string line;
 
     // Parse the request line
@@ -77,6 +78,21 @@ void Request::_validateRequest()
         _error_message = "Missing or empty Host header";
         return;
     }
+	std::string connectionHeader = getHeader("Connection");
+    std::transform(connectionHeader.begin(), connectionHeader.end(), connectionHeader.begin(), ::tolower);
+
+    if (_version == "HTTP/1.1" && connectionHeader != "close")
+    {
+        _keepAlive = true;
+    }
+    else if (_version == "HTTP/1.0" && connectionHeader == "keep-alive")
+    {
+        _keepAlive = true;
+    }
+    else
+    {
+        _keepAlive = false;
+    }
 }
 
 
@@ -128,3 +144,12 @@ std::string Request::getBody() const
 	return _body;
 }
 
+void Request::setKeepAlive(bool keepAlive)
+{
+    _keepAlive = keepAlive;
+}
+
+bool Request::getKeepAlive() const
+{
+    return _keepAlive;
+}

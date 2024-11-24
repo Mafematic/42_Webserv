@@ -47,7 +47,7 @@
         <li><button onclick="window.location.href='/about.html'">Simple GET Request</button></li>
         <li><button onclick="window.location.href='form.html'">Check POST Method with Form</button></li>
         <li><button onclick="window.location.href='upload.html'">Upload File with POST</button></li>
-        <li><button onclick="sendDeleteRequest()">Check DELETE Method</button></li>
+        <li><button onclick="window.location.href='/delete.html'">DELETE a File</button></li>
     </ul>
 
     <div id="content"></div>
@@ -102,12 +102,6 @@
                 .catch(err => console.error('Error:', err));
         }
 
-        function sendDeleteRequest() {
-            fetch('/delete-endpoint', { method: 'DELETE' })
-                .then(response => response.text())
-                .then(data => document.getElementById('content').innerHTML = data)
-                .catch(err => console.error('Error:', err));
-        }
     </script>
 </body>
 
