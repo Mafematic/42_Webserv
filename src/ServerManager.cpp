@@ -152,11 +152,15 @@ void ServerManager::handleClient(int clientSocket, std::vector<Server> servers)
 	{
 		return;
 	}
+	std::cout << "++++ Buffer" << buffer << std::endl;
+
+	/*
 	int contentLength = getContentLength(buffer);
 	if (contentLength > 0)
 	{
 		buffer = readRequestBody(clientSocket, buffer, contentLength);
 	}
+	*/
 	Request req(buffer); // Parse the raw request
 
 	//gets the server that the client is connected to, if there are multiple servers,
@@ -219,10 +223,19 @@ void ServerManager::run()
 				}
 			}
 		}
+	// process_request();
 		checkTimeout();
 	}
 	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }
+
+	// process_request();
+	// check header received
+	// parse header
+	// assign server
+	// do routing
+	// 
+
 
 void	ServerManager::checkTimeout()
 {

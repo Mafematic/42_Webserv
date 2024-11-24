@@ -12,6 +12,15 @@ class Client
 		int		clientFd;
 		time_t	lastActivity;
 		Serverhandler handler;
+		// std::basic_string<char> buffer
+		// Server & server
+		// Route & Route
+		// Request & cur_request
+
+
+		// check_header_received()
+
+
 	public:
 		Client();
 		Client(int clientFd, Serverhandler handler);
