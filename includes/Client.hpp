@@ -12,7 +12,7 @@ class Client
 		int		clientFd;
 		time_t	lastActivity;
 		Serverhandler handler;
-		// std::basic_string<char> buffer
+		std::basic_string<char> _buffer;
 		// Server & server
 		// Route & Route
 		// Request & cur_request
@@ -33,6 +33,10 @@ class Client
 		Serverhandler getServerhandler();
 		int		getFd();
 		void	updateLastActivity();
+
+		std::basic_string<char> &getBuffer();
+		void appendToBuffer(const std::basic_string<char> &data);
+		void clearBuffer();
 
 };
 

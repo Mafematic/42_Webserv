@@ -42,30 +42,30 @@ void ServerManager::sendClientResponse(int clientSocket, std::string &response)
 	}
 }
 
-std::basic_string<char> ServerManager::readRequest(int clientSocket)
+void ServerManager::readRequest(Client &client)
 {
-	std::basic_string<char> buffer;               // Binary-safe buffer
-	std::vector<char> tempBuffer(BUFFER_SIZE);    // Temporary buffer for socket read
+    std::vector<char> tempBuffer(BUFFER_SIZE);
 
     while (true)
-    {
-        int bytes_read = read(clientSocket, tempBuffer.data(), tempBuffer.size());
-        if (bytes_read <= 0)
-        {
+	{
+        int bytesRead = read(client.getFd(), tempBuffer.data(), tempBuffer.size());
+        if (bytesRead <= 0)
+		{
+            if (bytesRead == 0) 
+				break; 
             perror("Failed to read request");
-            close(clientSocket);
-            return "";
+            close(client.getFd());
+            client.clearBuffer();
+            return;
         }
 
-        buffer.append(tempBuffer.data(), bytes_read);
+        client.appendToBuffer(std::string(tempBuffer.data(), bytesRead));
 
-        if (buffer.find("\r\n\r\n") != std::basic_string<char>::npos)
-        {
+        if (client.getBuffer().find("\r\n\r\n") != std::string::npos)
+		{
             break;
         }
     }
-
-    return buffer;
 }
 
 int ServerManager::getContentLength(const std::string& request)
@@ -83,39 +83,6 @@ int ServerManager::getContentLength(const std::string& request)
 	return 0;
 }
 
-std::basic_string<char> ServerManager::readRequestBody(int clientSocket, std::basic_string<char> &buffer, int contentLength)
-{
-    size_t headerEnd = buffer.find("\r\n\r\n") + 4; // End of headers
-
-    // Temporary buffer for reading chunks
-    std::vector<char> tempBuffer(BUFFER_SIZE);
-
-    while (buffer.size() < headerEnd + contentLength)
-    {
-        int bytesRead = read(clientSocket, tempBuffer.data(), tempBuffer.size());
-
-        if (bytesRead > 0)
-        {
-            buffer.append(tempBuffer.data(), bytesRead); // Append only the bytes read
-        }
-        else if (bytesRead == 0)
-        {
-            std::cerr << "Client closed the connection.\n";
-            break;
-        }
-        else if (errno == EAGAIN || errno == EWOULDBLOCK)
-        {
-            continue; // Non-blocking mode: retry if no data is available
-        }
-        else
-        {
-            std::cerr << "Read error: " << strerror(errno) << " (errno: " << errno << ")\n";
-            break;
-        }
-    }
-
-    return buffer;
-}
 
 Server ServerManager::getServer(std::vector<Server> servers, Request req)
 {
@@ -144,24 +111,16 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 	return server;
 }
 
-void ServerManager::handleClient(int clientSocket, std::vector<Server> servers)
+void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 {
-	//std::basic_string<char> &buffer = _clientBuffers[clientSocket];
-	std::string buffer = readRequest(clientSocket);
-	if (buffer.empty())
+	readRequest(client);
+    if (client.getBuffer().empty())
 	{
-		return;
-	}
-	std::cout << "++++ Buffer" << buffer << std::endl;
+        return;
+    }
+    std::cout << "++++ Buffer: " << client.getBuffer() << std::endl;
 
-	/*
-	int contentLength = getContentLength(buffer);
-	if (contentLength > 0)
-	{
-		buffer = readRequestBody(clientSocket, buffer, contentLength);
-	}
-	*/
-	Request req(buffer); // Parse the raw request
+    Request req(client.getBuffer());
 
 	//gets the server that the client is connected to, if there are multiple servers,
 	//it will get the server based on the host header
@@ -169,7 +128,8 @@ void ServerManager::handleClient(int clientSocket, std::vector<Server> servers)
 
 	std::string response = RequestRouter::route(req);
 	//std::cout << "++++ Response" << response << std::endl;
-	sendClientResponse(clientSocket, response);
+	sendClientResponse(client.getFd(), response);
+	client.clearBuffer();
 }
 
 void ServerManager::run()
@@ -218,7 +178,7 @@ void ServerManager::run()
 					{
 						_clients[_eventFd].updateLastActivity();
 						std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
-						handleClient(_eventFd, _clients[_eventFd].getServerhandler().getServers());
+						handleClient(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
 					}
 				}
 			}
@@ -235,7 +195,6 @@ void ServerManager::run()
 	// assign server
 	// do routing
 	// 
-
 
 void	ServerManager::checkTimeout()
 {

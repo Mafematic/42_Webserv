@@ -17,12 +17,11 @@ class ServerManager
 
 		void setup(std::string path);
 		void run();
-		void handleClient(int clientSocket, std::vector<Server> servers);
+		void handleClient(Client &client, std::vector<Server> servers);
 		Server	getServer(std::vector<Server> servers, Request req);
-		std::basic_string<char> readRequest(int clientSocket);
+		void readRequest(Client &client);
 		int getContentLength(const std::string& request);
 		void sendClientResponse(int clientSocket, std::string &response);
-		std::basic_string<char> readRequestBody(int clientSocket, std::string &buffer, int contentLength);
 
 	private:
 		std::vector<Serverhandler>	serverhandler;

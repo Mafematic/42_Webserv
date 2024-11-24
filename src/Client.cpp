@@ -40,3 +40,18 @@ void	Client::updateLastActivity()
 {
 	lastActivity = time(NULL);
 }
+
+std::basic_string<char> &Client::getBuffer()
+{
+    return _buffer;
+}
+
+void Client::appendToBuffer(const std::basic_string<char> &data)
+{
+    _buffer += data;
+}
+
+void Client::clearBuffer()
+{
+    _buffer.clear();
+}
