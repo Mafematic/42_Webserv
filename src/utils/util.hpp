@@ -25,6 +25,7 @@ int		is_valid_http_code(std::string err_code);
 
 std::string to_string(int value);
 bool ends_with(const std::string &str, const std::string &suffix);
+bool directoryExists(const std::string &path);
 
 // template functions
 template <typename Container> void print_container(const Container &container,

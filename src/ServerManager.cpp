@@ -126,7 +126,7 @@ void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 	//it will get the server based on the host header
 	Server server = getServer(servers, req);
 
-	std::string response = RequestRouter::route(req);
+	std::string response = RequestRouter::route(req, server);
 	//std::cout << "++++ Response" << response << std::endl;
 	sendClientResponse(client.getFd(), response);
 	client.clearBuffer();

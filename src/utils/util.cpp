@@ -253,15 +253,26 @@ int	is_valid_http_code(std::string err_code)
 
 std::string to_string(int value)
 {
-    std::stringstream ss;
-    ss << value;
-    return ss.str();
+	std::stringstream ss;
+	ss << value;
+	return ss.str();
 }
 
 bool ends_with(const std::string &str, const std::string &suffix)
 {
-    return str.size() >= suffix.size() &&
-           str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+	return str.size() >= suffix.size() &&
+		   str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
+
+bool directoryExists(const std::string &path)
+{
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0)
+	{
+		return false; // Path does not exist
+	}
+	return (info.st_mode & S_IFDIR) != 0;
+}
+
 
 } // namespace util
