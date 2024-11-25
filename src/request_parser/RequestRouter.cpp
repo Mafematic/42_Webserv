@@ -22,7 +22,7 @@ std::string RequestRouter::route(const Request &req)
             return _serveFile("root/413.html", 413, req); // Payload too large
         }
 
-        FileUploader uploader(req.getBody());
+        FileUploader uploader(req);
         if (uploader.isMalformed())
         {
             return _serveFile("root/400.html", 400, req); // Malformed request

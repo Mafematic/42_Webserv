@@ -2,6 +2,7 @@
 #define UPLOADER_HPP
 
 #include <string>
+#include "Request.hpp"
 
 class FileUploader
 {
@@ -10,12 +11,12 @@ class FileUploader
         std::string _filename;
         std::string _fileContent;
 
-        std::string _extractBoundary(const std::string &body);
-        std::string _extractFilename(const std::string &body);
-        std::string _extractFileContent(const std::string &body, const std::string &boundary);
+        std::string _extractBoundary(const Request &req);
+        std::string _extractFilename(const Request &req);
+        std::string _extractFileContent(const Request &req, const std::string &boundary);
 
     public:
-		FileUploader(const std::string &body);
+		FileUploader(const Request &req);
         bool handleRequest();
 		bool isMalformed() const;
 		~FileUploader() {};

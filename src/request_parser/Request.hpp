@@ -11,6 +11,10 @@ class Request
 		std::string _path;
 		std::string _version;
 		std::map<std::string, std::string> _headers;
+		//std::map<std::string, std::string> _bodyHeaders;
+    	//std::string _contentDisposition;
+    	//std::string _contentType;
+
 		bool _valid;
 		std::string _error_message;
 		std::string _raw_request;
@@ -31,6 +35,10 @@ class Request
 		std::string getErrorMessage() const;
 		std::string getRawRequest() const;
 		std::string getHeader(const std::string &key) const;
+
+		std::string getContentDisposition() const;
+    	std::string getContentType() const;
+
 		std::string getBody() const;
 
 		void setKeepAlive(bool keepAlive);
