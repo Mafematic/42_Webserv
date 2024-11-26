@@ -28,40 +28,48 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-void ServerManager::sendClientResponse(int clientSocket, std::string &response)
+void ServerManager::sendClientResponse(Client client, std::string response)
 {
-	ssize_t bytesSent = send(clientSocket, response.c_str(), response.length(), 0); // 0 = no flags
+	ssize_t bytesSent = send(client.getFd(), response.c_str(), response.length(), 0); // 0 = no flags
 	if (bytesSent < 0)
 	{
 		perror("Failed to send response");
+	}
+	else
+	{
+		// Reset the event to listen for incoming data
+		_ev.events = EPOLLIN | EPOLLET;
+		_ev.data.fd = client.getFd();
+		if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &_ev) == -1)
+			perror("Failed to modify epoll event");
 	}
 }
 
 void ServerManager::readRequest(Client &client)
 {
-		std::vector<char> tempBuffer(BUFFER_SIZE);
+	std::vector<char> tempBuffer(BUFFER_SIZE);
 
-		while (true)
+	while (true)
+	{
+		int bytesRead = read(client.getFd(), tempBuffer.data(), tempBuffer.size());
+		if (bytesRead <= 0)
 		{
-			int bytesRead = read(client.getFd(), tempBuffer.data(), tempBuffer.size());
-			if (bytesRead <= 0)
-			{
-				if (bytesRead == 0)
-					break;
-				perror("Failed to read request");
-				close(client.getFd());
-				client.clearBuffer();
-				_clients.erase(client.getFd());
-				return;
-			}
-
-			client.appendToBuffer(std::string(tempBuffer.data(), bytesRead));
-
-			if (client.getBuffer().find("\r\n\r\n") != std::string::npos)
-			{
+			if (bytesRead == 0)
 				break;
-			}
+			perror("Failed to read request");
+			close(client.getFd());
+			client.clearBuffer();
+			_clients.erase(client.getFd());
+			return;
 		}
+
+		client.appendToBuffer(std::string(tempBuffer.data(), bytesRead));
+
+		if (client.getBuffer().find("\r\n\r\n") != std::string::npos)
+		{
+			break;
+		}
+	}
 }
 
 int ServerManager::getContentLength(const std::string& request)
@@ -110,16 +118,28 @@ void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 	{
 		return;
 	}
-	std::cout << "++++ Buffer: " << client.getBuffer() << std::endl;
+	//std::cout << "++++ Buffer: " << client.getBuffer() << std::endl;
 
 	Request req(client.getBuffer());
 
 	client.setServer(getServer(servers, req));
 
 	std::string response = RequestRouter::route(req, client.getServer());
-	//std::cout << "++++ Response" << response << std::endl;
-	sendClientResponse(client.getFd(), response);
+
+	client.setResponse(response);
 	client.clearBuffer();
+
+	//std::cout << "++++ Response" << response << std::endl;
+
+	struct epoll_event ev;
+	ev.events = EPOLLOUT | EPOLLET;
+	ev.data.fd = client.getFd();
+	std::cout << BLUE << "[Client ready for processing] : ClientFd " << client.getFd() << RESET << std::endl;
+	if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &ev) == -1)
+	{
+		perror("Failed to modify epoll event");
+		return;
+	}
 }
 
 void ServerManager::run()
@@ -163,6 +183,17 @@ void ServerManager::run()
 						std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
 						handleClient(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
 					}
+				}
+			}
+			else if (events[i].events & EPOLLOUT)
+			{
+				// Handle write events
+				if (_clients.find(_eventFd) != _clients.end())
+				{
+					Client client = _clients[_eventFd];
+					_clients[_eventFd].updateLastActivity();
+					std::cout << GREEN << "[Sending Response] : ClientFd " << client.getFd() << RESET << std::endl;
+					sendClientResponse(client, client.getResponse());
 				}
 			}
 		}

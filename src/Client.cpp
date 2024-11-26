@@ -16,6 +16,10 @@ Client	&Client::operator=(const Client &src)
 	lastActivity = src.lastActivity;
 	clientFd = src.clientFd;
 	handler = src.handler;
+	_buffer = src._buffer;
+	_isChunked = src._isChunked;
+	server = src.server;
+	response = src.response;
 	return *this;
 }
 
@@ -76,4 +80,13 @@ Server Client::getServer()
 	return server;
 }
 
+void Client::setResponse(std::string response)
+{
+	this->response = response;
+}
+
+std::string Client::getResponse()
+{
+	return response;
+}
 

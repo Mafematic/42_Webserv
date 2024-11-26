@@ -13,6 +13,7 @@ class Client
 		time_t	lastActivity;
 		Serverhandler handler;
 
+		std::string	response;
 		std::basic_string<char> _buffer;
 		bool	_isChunked;
 		Server	server;
@@ -43,6 +44,8 @@ class Client
 		bool isChunked();
 		void setServer(Server server);
 		Server getServer();
+		void setResponse(std::string response);
+		std::string getResponse();
 
 };
 
