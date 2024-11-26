@@ -9,11 +9,6 @@ void ServerManager::setup(std::string config_path)
 	_server_config = parser.parse_config();
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
-		//print server_name
-		// std::vector<std::string> name = it->get_server_name();
-		// for (std::vector<std::string>::iterator it2 = name.begin(); it2 != name.end(); ++it2)
-		// 	std::cout << GREEN << "Servername: " << *it2 << RESET << std::endl;
-
 		for(std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
 		{
 			if (it->get_port() == tmp_it->getPort() && it->get_ip() == tmp_it->getIp())
@@ -44,28 +39,29 @@ void ServerManager::sendClientResponse(int clientSocket, std::string &response)
 
 void ServerManager::readRequest(Client &client)
 {
-    std::vector<char> tempBuffer(BUFFER_SIZE);
+		std::vector<char> tempBuffer(BUFFER_SIZE);
 
-    while (true)
-	{
-        int bytesRead = read(client.getFd(), tempBuffer.data(), tempBuffer.size());
-        if (bytesRead <= 0)
+		while (true)
 		{
-            if (bytesRead == 0) 
-				break; 
-            perror("Failed to read request");
-            close(client.getFd());
-            client.clearBuffer();
-            return;
-        }
+			int bytesRead = read(client.getFd(), tempBuffer.data(), tempBuffer.size());
+			if (bytesRead <= 0)
+			{
+				if (bytesRead == 0)
+					break;
+				perror("Failed to read request");
+				close(client.getFd());
+				client.clearBuffer();
+				_clients.erase(client.getFd());
+				return;
+			}
 
-        client.appendToBuffer(std::string(tempBuffer.data(), bytesRead));
+			client.appendToBuffer(std::string(tempBuffer.data(), bytesRead));
 
-        if (client.getBuffer().find("\r\n\r\n") != std::string::npos)
-		{
-            break;
-        }
-    }
+			if (client.getBuffer().find("\r\n\r\n") != std::string::npos)
+			{
+				break;
+			}
+		}
 }
 
 int ServerManager::getContentLength(const std::string& request)
@@ -88,13 +84,9 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 {
 	Server server;
 	if (servers.size() == 1)
-	{
-		std::cout << RED << "[DEBUG] Only one server for client" << RESET << std::endl;
 		server = servers[0];
-	}
 	else
 	{
-		std::cout << RED << "[DEBUG] Multiple servers for client" << RESET << std::endl;
 		server = servers[0];
 		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
 		{
@@ -114,19 +106,17 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 {
 	readRequest(client);
-    if (client.getBuffer().empty())
+	if (client.getBuffer().empty())
 	{
-        return;
-    }
-    std::cout << "++++ Buffer: " << client.getBuffer() << std::endl;
+		return;
+	}
+	std::cout << "++++ Buffer: " << client.getBuffer() << std::endl;
 
-    Request req(client.getBuffer());
+	Request req(client.getBuffer());
 
-	//gets the server that the client is connected to, if there are multiple servers,
-	//it will get the server based on the host header
-	Server server = getServer(servers, req);
+	client.setServer(getServer(servers, req));
 
-	std::string response = RequestRouter::route(req, server);
+	std::string response = RequestRouter::route(req, client.getServer());
 	//std::cout << "++++ Response" << response << std::endl;
 	sendClientResponse(client.getFd(), response);
 	client.clearBuffer();
@@ -139,14 +129,6 @@ void ServerManager::run()
 	if (createEpoll() == -1 || epollAddSockets() == -1) {
 		return;
 	}
-
-	//print all serversockets with servers connected to them
-	// for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
-	// {
-	// 	std::cout << YELLOW << "Servers on ServerFd: "<< it->getSocket() << RESET << std::endl;
-	// 	for (std::vector<Server>::iterator it2 = it->_servers.begin(); it2 != it->_servers.end(); ++it2)
-	// 		std::cout << *it2 << std::endl;
-	// }
 
 	std::cout << GREEN << "Server Manager started, waiting for connections..." << RESET << std::endl;
 
@@ -163,7 +145,8 @@ void ServerManager::run()
 				bool isServerSocket = false;
 				for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
 				{
-					if (_eventFd == it->getSocket()) {
+					if (_eventFd == it->getSocket())
+					{
 						isServerSocket = true;
 						tmp = *it;
 						break;
@@ -183,18 +166,10 @@ void ServerManager::run()
 				}
 			}
 		}
-	// process_request();
 		checkTimeout();
 	}
 	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }
-
-	// process_request();
-	// check header received
-	// parse header
-	// assign server
-	// do routing
-	// 
 
 void	ServerManager::checkTimeout()
 {

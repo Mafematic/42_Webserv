@@ -12,8 +12,10 @@ class Client
 		int		clientFd;
 		time_t	lastActivity;
 		Serverhandler handler;
+
 		std::basic_string<char> _buffer;
-		// Server & server
+		bool	_isChunked;
+		Server	server;
 		// Route & Route
 		// Request & cur_request
 
@@ -37,6 +39,10 @@ class Client
 		std::basic_string<char> &getBuffer();
 		void appendToBuffer(const std::basic_string<char> &data);
 		void clearBuffer();
+		void setChunked(bool isChunked);
+		bool isChunked();
+		void setServer(Server server);
+		Server getServer();
 
 };
 

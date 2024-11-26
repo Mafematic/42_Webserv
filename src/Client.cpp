@@ -55,3 +55,25 @@ void Client::clearBuffer()
 {
     _buffer.clear();
 }
+
+void Client::setChunked(bool isChunked)
+{
+	_isChunked = isChunked;
+}
+
+bool Client::isChunked()
+{
+	return _isChunked;
+}
+
+void Client::setServer(Server server)
+{
+	this->server = server;
+}
+
+Server Client::getServer()
+{
+	return server;
+}
+
+
