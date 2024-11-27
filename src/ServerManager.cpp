@@ -7,6 +7,7 @@ void ServerManager::setup(std::string config_path)
 	Config_Parser parser(config_path);
 
 	_server_config = parser.parse_config();
+	std::cout << GREEN << "[Info]	Configuration file parsed" << RESET << std::endl;
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
 		for(std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
@@ -15,7 +16,7 @@ void ServerManager::setup(std::string config_path)
 			{
 				tmp_it->addServer(*it);
 				duplicate_flag = true;
-				std::cout << YELLOW << "[Serverduplicat detected] added to existing socket: " << tmp_it->getSocket() << RESET << std::endl;
+				std::cout << YELLOW << "[Info][Serverduplicat detected]	added to existing socket: " << tmp_it->getSocket() << RESET << std::endl;
 				break ;
 			}
 		}
@@ -59,9 +60,12 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 			for (std::vector<std::string>::iterator it2 = server_names.begin(); it2 != server_names.end(); ++it2)
 			{
 				std::string host = req.getHeader("Host");
-				host = host.substr(0, host.find(":"));
-				if (host == *it2)
-					return *it;
+				if (!host.empty())
+				{
+					host = host.substr(0, host.find(":"));
+					if (host == *it2)
+						return *it;
+				}
 			}
 		}
 	}
@@ -94,9 +98,9 @@ void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 		return;
 	}
 
-	//std::cout << TURKIZ << "++++ Buffer: " << client.getBuffer() << RESET << std::endl;
+	//std::cout << TURKIZ << "++++ Buffer: " << client.getCompleteRequest() << RESET << std::endl;
 
-	Request req(client.getBuffer());
+	Request req(client.getCompleteRequest());
 	client.setServer(getServer(servers, req));
 	std::string response = RequestRouter::route(req, client.getServer());
 	client.setResponse(response);
@@ -107,7 +111,7 @@ void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 	struct epoll_event ev;
 	ev.events = EPOLLOUT | EPOLLET;
 	ev.data.fd = client.getFd();
-	std::cout << BLUE << "[Client ready for processing] : ClientFd " << client.getFd() << RESET << std::endl;
+	std::cout << TURKIZ << "[Client ready for processing] : ClientFd " << client.getFd() << RESET << std::endl;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &ev) == -1)
 	{
 		perror("Failed to modify epoll event");
@@ -123,12 +127,12 @@ void ServerManager::run()
 		return;
 	}
 
-	std::cout << GREEN << "Server Manager started, waiting for connections..." << RESET << std::endl;
+	std::cout << GREEN << "[Info]	Servermanager is running" << RESET << std::endl;
 
 	Serverhandler tmp;
 	while (g_running)
 	{
-		int eventCount = epoll_wait(_epollFd, events, MAX_EVENTS, 1000);
+		int eventCount = epoll_wait(_epollFd, events, MAX_EVENTS, EPOLL_TIMEOUT);
 		for (int i = 0; i < eventCount; i++)
 		{
 			_eventFd = events[i].data.fd;
@@ -154,7 +158,7 @@ void ServerManager::run()
 					{
 						_clients[_eventFd].updateLastActivity();
 						if (_clients[_eventFd].isDone())
-							std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
+							std::cout << TURKIZ << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
 						handleClient(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
 					}
 				}
@@ -165,7 +169,7 @@ void ServerManager::run()
 				if (_clients.find(_eventFd) != _clients.end())
 				{
 					_clients[_eventFd].updateLastActivity();
-					std::cout << GREEN << "[Sending Response] : ClientFd " << _clients[_eventFd].getFd() << RESET << std::endl;
+					std::cout << TURKIZ << "[Sending Response] : ClientFd " << _clients[_eventFd].getFd() << RESET << std::endl;
 					sendClientResponse(_clients[_eventFd], _clients[_eventFd].getResponse());
 				}
 			}
@@ -269,8 +273,9 @@ int	ServerManager::epollAddSockets()
 			std::cerr << "Error: epoll_ctl failed for server socket (fd: " << serverSocket << "). Error: " << strerror(errno) << std::endl;
 			return -1;
 		}
-		std::cout << "[Serversocket added] - fd: " << it->getSocket() << ", port: " << it->getPort() << std::endl;
+		std::cout << GREEN << "[Info]	server " << RESET << it->getSocket() << GREEN << " is ready " << std::endl;
 	}
+	//std::cout << GREEN << "[Info]	All server sockets added to epoll" << RESET << std::endl;
 	return 1;
 }
 

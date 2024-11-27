@@ -4,8 +4,9 @@ Client::Client(){}
 
 Client::Client(int clientFd, Serverhandler handler) : clientFd(clientFd), lastActivity(time(NULL)), handler(handler)
 {
-	_done = true;
+	_readDone = true;
 	_isChunked = false;
+	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
 }
@@ -24,11 +25,12 @@ Client	&Client::operator=(const Client &src)
 	handler = src.handler;
 	_buffer = src._buffer;
 	_isChunked = src._isChunked;
+	_currentChunkSize = src._currentChunkSize;
 	server = src.server;
 	response = src.response;
 	_contentLength = src._contentLength;
 	_bytesReceived = src._bytesReceived;
-	_done = src._done;
+	_readDone = src._readDone;
 	return *this;
 }
 
@@ -38,25 +40,55 @@ int	Client::readRequest()
 {
 	char buffer[BUFFER_SIZE];
 
-	size_t bytesRead = read(clientFd, buffer, BUFFER_SIZE);
+	ssize_t bytesRead = read(clientFd, buffer, BUFFER_SIZE);
 	if (bytesRead < 0)
 		return READ_ERROR;
 	else if (bytesRead == 0)
 		return CLIENT_DISCONNECTED;
 
 	_bytesReceived += bytesRead;
-	//std::cout << RED << "BytesRead: " << bytesRead << " BytesReceived: " << _bytesReceived << RESET << std::endl;
 	_buffer.append(buffer, bytesRead);
 
-	//std::cout << TURKIZ << "Buffer: " << _buffer << RESET << std::endl;
 	if (requestComplete())
-	{
-		//std::cout << RED << "BytesReceived: " << _bytesReceived << " ContentLength: " << _contentLength << RESET << std::endl;
 		return READ_COMPLETE;
-	}
-	_done = false;
+
+	_readDone = false;
 	return READ_NOT_COMPLETE;
 }
+
+// int	Client::processChunkedData()
+// {
+// 	std::cout << "Processing chunked data" << std::endl;
+// 	while(1)
+// 	{
+// 		std::cout << RED << "buffer: " << _buffer << RESET << std::endl;
+
+// 		if (_currentChunkSize == 0)
+// 		{
+// 			size_t pos = _buffer.find("\r\n");
+// 			if (pos == std::string::npos)
+// 				return READ_NOT_COMPLETE;
+// 			std::string chunkSizeStr = _buffer.substr(0, pos);
+// 			std::istringstream(chunkSizeStr) >> std::hex >> _currentChunkSize;
+// 			_buffer.erase(0, pos + 2);
+// 			if (_currentChunkSize == 0)
+// 			{
+// 				//std::cout << RED << "Chunked data complete" << RESET << std::endl;
+// 				_isChunked = false;
+// 				_readDone = true;
+// 				return READ_COMPLETE;
+// 			}
+// 		}
+// 		else
+// 		{
+// 			if (_buffer.size() < _currentChunkSize + 2)
+// 				return READ_NOT_COMPLETE;
+// 			_completeRequest.append(_buffer, 0, _currentChunkSize);
+// 			_buffer.erase(0, _currentChunkSize + 2);
+// 			_currentChunkSize = 0;
+// 		}
+// 	}
+// }
 
 bool	Client::requestComplete()
 {
@@ -86,8 +118,9 @@ void	Client::getContentLength()
 void	Client::clearRequest()
 {
 	//std::cout << RED << "Clearing request" << RESET << std::endl;
-	_done = true;
+	_readDone = true;
 	_isChunked = false;
+	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
 	_buffer.clear();
@@ -113,9 +146,9 @@ void	Client::updateLastActivity()
 	lastActivity = time(NULL);
 }
 
-std::string	Client::getBuffer()
+std::string	Client::getCompleteRequest()
 {
-    return _buffer;
+	return _buffer;
 }
 
 void Client::clearBuffer()
@@ -155,5 +188,5 @@ std::string Client::getResponse()
 
 bool	Client::isDone()
 {
-	return _done;
+	return _readDone;
 }

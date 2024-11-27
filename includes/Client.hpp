@@ -9,14 +9,16 @@
 class Client
 {
 	private:
-		int		clientFd;
-		time_t	lastActivity;
-		Serverhandler handler;
+		int				clientFd;
+		time_t			lastActivity;
+		Serverhandler	handler;
 
 		std::string			response;
 
 		bool				_isChunked;
-		bool				_done;
+		size_t				_currentChunkSize;
+
+		bool				_readDone;
 		size_t				_contentLength;
 		size_t				_bytesReceived;
 		std::string			_buffer;
@@ -43,11 +45,12 @@ class Client
 		void	updateLastActivity();
 
 		int		readRequest();
+		int		processChunkedData();
 		bool	requestComplete();
 		void	clearRequest();
 		void	getContentLength();
 
-		std::string getBuffer();
+		std::string getCompleteRequest();
 		void clearBuffer();
 		void setChunked(bool isChunked);
 		bool isChunked();
