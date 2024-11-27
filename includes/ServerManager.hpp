@@ -19,9 +19,8 @@ class ServerManager
 		void run();
 		void handleClient(Client &client, std::vector<Server> servers);
 		Server	getServer(std::vector<Server> servers, Request req);
-		void readRequest(Client &client);
-		int getContentLength(const std::string& request);
-		void sendClientResponse(Client client, std::string response);
+		void 	sendClientResponse(Client &client, std::string response);
+		void	closeConnection(Client &client, std::string reason);
 
 	private:
 		std::vector<Serverhandler>	serverhandler;

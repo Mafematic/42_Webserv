@@ -28,7 +28,7 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-void ServerManager::sendClientResponse(Client client, std::string response)
+void ServerManager::sendClientResponse(Client &client, std::string response)
 {
 	ssize_t bytesSent = send(client.getFd(), response.c_str(), response.length(), 0); // 0 = no flags
 	if (bytesSent < 0)
@@ -37,56 +37,13 @@ void ServerManager::sendClientResponse(Client client, std::string response)
 	}
 	else
 	{
-		// Reset the event to listen for incoming data
+		client.clearRequest();
 		_ev.events = EPOLLIN | EPOLLET;
 		_ev.data.fd = client.getFd();
 		if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &_ev) == -1)
 			perror("Failed to modify epoll event");
 	}
 }
-
-void ServerManager::readRequest(Client &client)
-{
-	std::vector<char> tempBuffer(BUFFER_SIZE);
-
-	while (true)
-	{
-		int bytesRead = read(client.getFd(), tempBuffer.data(), tempBuffer.size());
-		if (bytesRead <= 0)
-		{
-			if (bytesRead == 0)
-				break;
-			perror("Failed to read request");
-			close(client.getFd());
-			client.clearBuffer();
-			_clients.erase(client.getFd());
-			return;
-		}
-
-		client.appendToBuffer(std::string(tempBuffer.data(), bytesRead));
-
-		if (client.getBuffer().find("\r\n\r\n") != std::string::npos)
-		{
-			break;
-		}
-	}
-}
-
-int ServerManager::getContentLength(const std::string& request)
-{
-	size_t content_length_pos = request.find("Content-Length: ");
-	if (content_length_pos != std::string::npos)
-	{
-		size_t start = content_length_pos + 16; // "Content-Length: " length
-		size_t end = request.find("\r\n", start);
-		std::string content_length_str = request.substr(start, end - start);
-		int content_length;
-		std::istringstream(content_length_str) >> content_length;
-		return content_length;
-	}
-	return 0;
-}
-
 
 Server ServerManager::getServer(std::vector<Server> servers, Request req)
 {
@@ -113,19 +70,35 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 
 void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 {
-	readRequest(client);
-	if (client.getBuffer().empty())
+	int status = client.readRequest();
+	if (status == READ_ERROR)
 	{
+		closeConnection(client, "[Failed to read request]");
 		return;
 	}
-	//std::cout << "++++ Buffer: " << client.getBuffer() << std::endl;
+	else if (status == CLIENT_DISCONNECTED)
+	{
+		closeConnection(client, "[Client disconnected]");
+		return;
+	}
+	else if (status == READ_NOT_COMPLETE)
+	{
+		struct epoll_event ev;
+		ev.events = EPOLLIN | EPOLLET;
+		ev.data.fd = client.getFd();
+		if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &ev) == -1)
+		{
+			perror("Failed to modify epoll event");
+			return;
+		}
+		return;
+	}
+
+	//std::cout << TURKIZ << "++++ Buffer: " << client.getBuffer() << RESET << std::endl;
 
 	Request req(client.getBuffer());
-
 	client.setServer(getServer(servers, req));
-
 	std::string response = RequestRouter::route(req, client.getServer());
-
 	client.setResponse(response);
 	client.clearBuffer();
 
@@ -180,7 +153,8 @@ void ServerManager::run()
 					if (_clients.find(_eventFd) != _clients.end())
 					{
 						_clients[_eventFd].updateLastActivity();
-						std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
+						if (_clients[_eventFd].isDone())
+							std::cout << GREEN << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
 						handleClient(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
 					}
 				}
@@ -190,10 +164,9 @@ void ServerManager::run()
 				// Handle write events
 				if (_clients.find(_eventFd) != _clients.end())
 				{
-					Client client = _clients[_eventFd];
 					_clients[_eventFd].updateLastActivity();
-					std::cout << GREEN << "[Sending Response] : ClientFd " << client.getFd() << RESET << std::endl;
-					sendClientResponse(client, client.getResponse());
+					std::cout << GREEN << "[Sending Response] : ClientFd " << _clients[_eventFd].getFd() << RESET << std::endl;
+					sendClientResponse(_clients[_eventFd], _clients[_eventFd].getResponse());
 				}
 			}
 		}
@@ -208,14 +181,22 @@ void	ServerManager::checkTimeout()
 	{
 		if (time(NULL) - it->second.getLastActivity() > CLIENT_TIMEOUT)
 		{
-			std::cout << YELLOW << "[Timeout] Client disconnected : ClientFd " << it->first << RESET << std::endl;
-			epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->first, NULL);
-			close(it->first);
-			_clients.erase(it++);
+			Client tmp = it->second;
+			it++;
+			closeConnection(tmp, "[Client timeout]");
 		}
 		else
 			++it;
 	}
+}
+
+void	ServerManager::closeConnection(Client &client, std::string reason)
+{
+	std::cout << YELLOW << reason << " Client disconnected : ClientFd " << client.getFd() << RESET << std::endl;
+	epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.getFd(), NULL);
+	close(client.getFd());
+	client.clearBuffer();
+	_clients.erase(client.getFd());
 }
 
 void	ServerManager::acceptNewConnection(Serverhandler handler)

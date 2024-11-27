@@ -13,9 +13,14 @@ class Client
 		time_t	lastActivity;
 		Serverhandler handler;
 
-		std::string	response;
-		std::basic_string<char> _buffer;
-		bool	_isChunked;
+		std::string			response;
+
+		bool				_isChunked;
+		bool				_done;
+		size_t				_contentLength;
+		size_t				_bytesReceived;
+		std::string			_buffer;
+
 		Server	server;
 		// Route & Route
 		// Request & cur_request
@@ -37,8 +42,12 @@ class Client
 		int		getFd();
 		void	updateLastActivity();
 
-		std::basic_string<char> &getBuffer();
-		void appendToBuffer(const std::basic_string<char> &data);
+		int		readRequest();
+		bool	requestComplete();
+		void	clearRequest();
+		void	getContentLength();
+
+		std::string getBuffer();
 		void clearBuffer();
 		void setChunked(bool isChunked);
 		bool isChunked();
@@ -46,7 +55,7 @@ class Client
 		Server getServer();
 		void setResponse(std::string response);
 		std::string getResponse();
-
+		bool	isDone();
 };
 
 #endif
