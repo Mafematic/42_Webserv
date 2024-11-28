@@ -17,9 +17,9 @@ class ServerManager
 
 		void setup(std::string path);
 		void run();
-		void handleClient(Client &client, std::vector<Server> servers);
+		void	handleClientRequest(Client &client, std::vector<Server> servers);
+		void	handleClientResponse(Client &client);
 		Server	getServer(std::vector<Server> servers, Request req);
-		void 	sendClientResponse(Client &client, std::string response);
 		void	closeConnection(Client &client, std::string reason);
 
 	private:

@@ -14,11 +14,12 @@ class Client
 		Serverhandler	handler;
 
 		std::string			response;
+		size_t				_responselength;
+		size_t				_responseSentBytes;
 
 		bool				_isChunked;
 		size_t				_currentChunkSize;
 
-		bool				_readDone;
 		size_t				_contentLength;
 		size_t				_bytesReceived;
 		std::string			_buffer;
@@ -50,6 +51,9 @@ class Client
 		void	clearRequest();
 		void	getContentLength();
 
+		int		sendResponse();
+		void	clearResponse();
+
 		std::string getCompleteRequest();
 		void clearBuffer();
 		void setChunked(bool isChunked);
@@ -58,7 +62,6 @@ class Client
 		Server getServer();
 		void setResponse(std::string response);
 		std::string getResponse();
-		bool	isDone();
 };
 
 #endif

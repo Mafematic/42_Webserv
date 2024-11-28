@@ -29,23 +29,6 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-void ServerManager::sendClientResponse(Client &client, std::string response)
-{
-	ssize_t bytesSent = send(client.getFd(), response.c_str(), response.length(), 0); // 0 = no flags
-	if (bytesSent < 0)
-	{
-		perror("Failed to send response");
-	}
-	else
-	{
-		client.clearRequest();
-		_ev.events = EPOLLIN | EPOLLET;
-		_ev.data.fd = client.getFd();
-		if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &_ev) == -1)
-			perror("Failed to modify epoll event");
-	}
-}
-
 Server ServerManager::getServer(std::vector<Server> servers, Request req)
 {
 	Server server;
@@ -72,7 +55,9 @@ Server ServerManager::getServer(std::vector<Server> servers, Request req)
 	return server;
 }
 
-void ServerManager::handleClient(Client &client, std::vector<Server> servers)
+//-------------------------------------------------HANDLE CLIENT REQUEST & RESPONSE-------------------------------------------------//
+
+void ServerManager::handleClientRequest(Client &client, std::vector<Server> servers)
 {
 	int status = client.readRequest();
 	if (status == READ_ERROR)
@@ -82,23 +67,13 @@ void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 	}
 	else if (status == CLIENT_DISCONNECTED)
 	{
-		closeConnection(client, "[Client disconnected]");
+		closeConnection(client, "[Client disconnected reading request]");
 		return;
 	}
 	else if (status == READ_NOT_COMPLETE)
-	{
-		struct epoll_event ev;
-		ev.events = EPOLLIN | EPOLLET;
-		ev.data.fd = client.getFd();
-		if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &ev) == -1)
-		{
-			perror("Failed to modify epoll event");
-			return;
-		}
 		return;
-	}
-
-	//std::cout << TURKIZ << "++++ Buffer: " << client.getCompleteRequest() << RESET << std::endl;
+	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
+	std::cout << PURPLE << "++++ Buffer: " << client.getCompleteRequest() << RESET << std::endl;
 
 	Request req(client.getCompleteRequest());
 	client.setServer(getServer(servers, req));
@@ -106,18 +81,33 @@ void ServerManager::handleClient(Client &client, std::vector<Server> servers)
 	client.setResponse(response);
 	client.clearBuffer();
 
-	//std::cout << "++++ Response" << response << std::endl;
-
-	struct epoll_event ev;
-	ev.events = EPOLLOUT | EPOLLET;
-	ev.data.fd = client.getFd();
-	std::cout << TURKIZ << "[Client ready for processing] : ClientFd " << client.getFd() << RESET << std::endl;
-	if (epoll_ctl(_epollFd, EPOLL_CTL_MOD, client.getFd(), &ev) == -1)
-	{
-		perror("Failed to modify epoll event");
-		return;
-	}
+	client.updateLastActivity();
+	std::cout << LIGTH BLUE << "+++++ [Request processed] : ClientFd " << client.getFd() << RESET << std::endl;
 }
+
+void	ServerManager::handleClientResponse(Client &client)
+{
+	int close = 0;
+	if (client.getResponse().empty())
+		return;
+	if (client.getResponse().find("Connection: close") != std::string::npos)
+		close = 1;
+
+	int	status = client.sendResponse();
+	if (status == SEND_ERROR)
+		return	closeConnection(client, "[Failed to send response]");
+	else if (status == SEND_NOT_COMPLETE)
+		return;
+
+	std::cout << LIGTH BLUE << "++++ [Response sent] : ClientFd " << client.getFd() << RESET << std::endl;
+
+	if (close == 1)
+		return closeConnection(client, "[Header -> Connection: close]");
+	client.clearRequest();
+	client.clearResponse();
+}
+
+//-------------------------------------------------SERVER LOOP-------------------------------------------------//
 
 void ServerManager::run()
 {
@@ -129,7 +119,6 @@ void ServerManager::run()
 
 	std::cout << GREEN << "[Info]	Servermanager is running" << RESET << std::endl;
 
-	Serverhandler tmp;
 	while (g_running)
 	{
 		int eventCount = epoll_wait(_epollFd, events, MAX_EVENTS, EPOLL_TIMEOUT);
@@ -138,40 +127,21 @@ void ServerManager::run()
 			_eventFd = events[i].data.fd;
 			if (events[i].events & EPOLLIN)
 			{
-				// Check if event is on a listening server socket
-				bool isServerSocket = false;
 				for (std::vector<Serverhandler>::iterator it = serverhandler.begin(); it != serverhandler.end(); ++it)
 				{
 					if (_eventFd == it->getSocket())
 					{
-						isServerSocket = true;
-						tmp = *it;
+						acceptNewConnection(*it);
 						break;
 					}
 				}
-
-				if (isServerSocket == true)
-					acceptNewConnection(tmp);
-				else
-				{
-					if (_clients.find(_eventFd) != _clients.end())
-					{
-						_clients[_eventFd].updateLastActivity();
-						if (_clients[_eventFd].isDone())
-							std::cout << TURKIZ << "[New Request] : ClientFd " << _clients.find(_eventFd)->second.getFd() << RESET << std::endl;
-						handleClient(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
-					}
-				}
+				if (_clients.find(_eventFd) != _clients.end())
+					handleClientRequest(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
 			}
 			else if (events[i].events & EPOLLOUT)
 			{
-				// Handle write events
 				if (_clients.find(_eventFd) != _clients.end())
-				{
-					_clients[_eventFd].updateLastActivity();
-					std::cout << TURKIZ << "[Sending Response] : ClientFd " << _clients[_eventFd].getFd() << RESET << std::endl;
-					sendClientResponse(_clients[_eventFd], _clients[_eventFd].getResponse());
-				}
+					handleClientResponse(_clients[_eventFd]);
 			}
 		}
 		checkTimeout();
@@ -197,9 +167,10 @@ void	ServerManager::checkTimeout()
 void	ServerManager::closeConnection(Client &client, std::string reason)
 {
 	std::cout << YELLOW << reason << " Client disconnected : ClientFd " << client.getFd() << RESET << std::endl;
-	epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.getFd(), NULL);
+	client.clearRequest();
+	client.clearResponse();
 	close(client.getFd());
-	client.clearBuffer();
+	epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.getFd(), NULL);
 	_clients.erase(client.getFd());
 }
 
@@ -210,7 +181,7 @@ void	ServerManager::acceptNewConnection(Serverhandler handler)
 	{
 		setNonBlocking(clientSocket);
 
-		_ev.events = EPOLLIN | EPOLLET;
+		_ev.events = EPOLLIN | EPOLLOUT;
 		_ev.data.fd = clientSocket;
 		if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientSocket, &_ev) == -1)
 		{
@@ -243,6 +214,8 @@ void	ServerManager::setNonBlocking(int socketFd)
 		return ;
 	}
 }
+
+//-------------------------------------------------EPOLL-------------------------------------------------//
 
 int	ServerManager::createEpoll()
 {
@@ -278,6 +251,8 @@ int	ServerManager::epollAddSockets()
 	//std::cout << GREEN << "[Info]	All server sockets added to epoll" << RESET << std::endl;
 	return 1;
 }
+
+//-------------------------------------------------CONSTRUCTORS & DESTRUCTORS-------------------------------------------------//
 
 ServerManager::ServerManager()
 {
