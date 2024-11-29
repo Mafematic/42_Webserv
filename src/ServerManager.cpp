@@ -67,13 +67,13 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	}
 	else if (status == CLIENT_DISCONNECTED)
 	{
-		closeConnection(client, "[Client disconnected reading request]");
+		closeConnection(client, "[DISCONNECT]");
 		return;
 	}
 	else if (status == READ_NOT_COMPLETE)
 		return;
 	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
-	std::cout << PURPLE << "++++ Buffer: " << client.getCompleteRequest() << RESET << std::endl;
+	//std::cout << PURPLE << "++++ Buffer: " << client.getCompleteRequest() << RESET << std::endl;
 
 	Request req(client.getCompleteRequest());
 	client.setServer(getServer(servers, req));
