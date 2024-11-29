@@ -18,6 +18,7 @@ class Client
 		size_t				_responseSentBytes;
 
 		bool				_isChunked;
+		std::string			_chunkFullString;
 		size_t				_currentChunkSize;
 
 		size_t				_contentLength;
@@ -46,10 +47,11 @@ class Client
 		void	updateLastActivity();
 
 		int		readRequest();
-		int		processChunkedData();
 		bool	requestComplete();
 		void	clearRequest();
 		void	getContentLength();
+
+		int		processChunkedData();
 
 		int		sendResponse();
 		void	clearResponse();

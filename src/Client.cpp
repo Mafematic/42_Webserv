@@ -27,6 +27,7 @@ Client	&Client::operator=(const Client &src)
 	_buffer = src._buffer;
 	_isChunked = src._isChunked;
 	_currentChunkSize = src._currentChunkSize;
+	_chunkFullString = src._chunkFullString;
 	server = src.server;
 	response = src.response;
 	_contentLength = src._contentLength;
@@ -55,14 +56,23 @@ int	Client::readRequest()
 
 	if (requestComplete())
 		return READ_COMPLETE;
-
+	if (_isChunked)
+		return processChunkedData();
 	return READ_NOT_COMPLETE;
 }
 
 bool	Client::requestComplete()
 {
+	if (_isChunked)
+		return false;
 	if (_buffer.find("\r\n\r\n") != std::string::npos)
 	{
+		if (_buffer.find("Transfer-Encoding: chunked") != std::string::npos)
+		{
+			_isChunked = true;
+			_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
+			return false;
+		}
 		getContentLength();
 		if (_bytesReceived >= _contentLength + _buffer.find("\r\n\r\n") + 4)
 			return true;
@@ -87,9 +97,50 @@ void	Client::clearRequest()
 {
 	_isChunked = false;
 	_currentChunkSize = 0;
+	_chunkFullString.clear();
 	_contentLength = 0;
 	_bytesReceived = 0;
 	_buffer.clear();
+}
+
+//------------------------------------PROCESS CHUNKED DATA------------------------------------//
+
+int	Client::processChunkedData()
+{
+	while (1)
+	{
+		if (_currentChunkSize == 0)
+		{
+			size_t pos = _buffer.find("\r\n");
+			if (pos == std::string::npos)
+				return READ_NOT_COMPLETE;
+
+			std::string chunk_size_str = _buffer.substr(0, pos);
+			std::istringstream(chunk_size_str) >> std::hex >> _currentChunkSize;
+
+			_buffer.erase(0, pos + 2);
+			if (_currentChunkSize == 0)
+			{
+				if (_buffer.find("\r\n") != std::string::npos)
+				{
+					_buffer = _chunkFullString;
+					return READ_COMPLETE;
+				}
+				else
+					return READ_ERROR;
+			}
+		}
+
+		if (_buffer.length() >= _currentChunkSize + 2)
+		{
+			_chunkFullString.append(_buffer, 0, _currentChunkSize);
+			_buffer.erase(0, _currentChunkSize + 2);
+			_currentChunkSize = 0;
+		}
+		else
+			return READ_NOT_COMPLETE;
+	}
+	return 0;
 }
 
 //------------------------------------SEND RESPONSE------------------------------------//
