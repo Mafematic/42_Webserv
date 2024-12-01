@@ -2,14 +2,13 @@
 
 import os
 import sys
+import time
+
 
 def main():
-    # Print the CGI HTTP headers
-    print("Content-Type: text/plain")  # Plain text response
-    print()  # Empty line to indicate the end of headers
-
     # Print all environment variables
     print("Environment Variables:")
+    print()
     for key, value in os.environ.items():
         print(f"{key}={value}")
     
@@ -26,6 +25,11 @@ def main():
             print("Failed to read input data.")
     else:
         print("No input data provided.")
+    time.sleep(5)
 
 if __name__ == "__main__":
     main()
+
+
+
+

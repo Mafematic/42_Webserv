@@ -4,5 +4,6 @@
 
 int main(void)
 {
-
+    Cgi_Controller controller;
+    controller.start_cgi();
 }

@@ -14,8 +14,8 @@
 // #include "Client.hpp"
 // #include "Request.hpp"
 // #include "Server.hpp"
-#include "webserv.hpp"
 #include "Cgi_Executor.hpp"
+#include "webserv.hpp"
 
 class Cgi_Controller
 {
@@ -26,25 +26,19 @@ class Cgi_Controller
 	virtual ~Cgi_Controller(void);
 
 	void start_cgi();
+	bool check_cgi_executor_timeout();
+	bool check_cgi_executor_finished();
+	void read_cgi_executor_response();
 
-	// void create_pipes(void);
-
-	// start executor
-	// create pipe_write_to_child
-	// create pipe_read_from_child
-	// close pipe_write_to_child
-	// close pipe_read_from_child
-	// fork execute
-	// check timeout
-	// kill cgi
-	// send response on cgi killed
+	std::string get_random_string(size_t length);
 
 	int executor_pid_id;
-	// int pipe_write_to_child[2];
 	int pipe_receive_cgi_answer[2];
 	std::basic_string<unsigned char> child_response_buffer;
 	bool child_response_fully_received;
+	bool child_finished;
 	time_t executor_start_time;
+	std::string tmp_file_name;
 
 	// Request &corresponding_request;
 	// Server &corresponding_server;

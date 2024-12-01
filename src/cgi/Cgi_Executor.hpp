@@ -26,13 +26,16 @@ class Cgi_Executor
 	void start_cgi();
 	void init_env_map();
 	void write_request_body_to_pipe();
+	void put_request_body_into_stdin();
 	void run_script();
 	void env_map_to_env_arr();
+	void create_argv_arr();
 
 	Cgi_Controller *corresponding_controller;
-	int pipe_write_request_body_to_cgi[2];
+	// int pipe_write_request_body_to_cgi[2];
 	std::map<std::string, std::string> env_map;
-	std::vector<char *> env_arr;
+	char **env_arr;
+	char **argv_arr;
 
 	std::string body;
 
@@ -48,7 +51,7 @@ class Cgi_Executor
 		virtual const char *what() const throw();
 
 		private:
-		std::string function_name;
+		std::string _function_name;
 		mutable std::string _msg;
 	};
 

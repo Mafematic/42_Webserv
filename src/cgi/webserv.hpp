@@ -56,3 +56,5 @@ enum	State
 #include <sys/stat.h>
 #include <numeric>
 #include <cstdlib>
+#include <sys/wait.h>
+

@@ -6,7 +6,7 @@
 /*   By: smatthes <smatthes@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/08 14:55:39 by smatthes          #+#    #+#             */
-/*   Updated: 2024/11/29 18:13:47 by smatthes         ###   ########.fr       */
+/*   Updated: 2024/11/30 13:50:39 by smatthes         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,15 +14,16 @@
 #include "Cgi_Executor.hpp"
 
 Cgi_Executor::Cgi_Executor(Cgi_Controller *val_corresponding_controller)
-	: corresponding_controller(val_corresponding_controller)
+	: corresponding_controller(val_corresponding_controller), env_arr(NULL),
+		argv_arr(NULL)
 {
 	return ;
 }
 
 Cgi_Executor::Cgi_Executor(const Cgi_Executor &other)
 {
-	this->pipe_write_request_body_to_cgi[0] = other.pipe_write_request_body_to_cgi[0];
-	this->pipe_write_request_body_to_cgi[1] = other.pipe_write_request_body_to_cgi[1];
+	// this->pipe_write_request_body_to_cgi[0] = other.pipe_write_request_body_to_cgi[0];
+	// this->pipe_write_request_body_to_cgi[1] = other.pipe_write_request_body_to_cgi[1];
 	this->corresponding_controller = other.corresponding_controller;
 	return ;
 }
@@ -31,8 +32,8 @@ Cgi_Executor &Cgi_Executor::operator=(const Cgi_Executor &other)
 {
 	if (this != &other)
 	{
-		this->pipe_write_request_body_to_cgi[0] = other.pipe_write_request_body_to_cgi[0];
-		this->pipe_write_request_body_to_cgi[1] = other.pipe_write_request_body_to_cgi[1];
+		// this->pipe_write_request_body_to_cgi[0] = other.pipe_write_request_body_to_cgi[0];
+		// this->pipe_write_request_body_to_cgi[1] = other.pipe_write_request_body_to_cgi[1];
 		this->corresponding_controller = other.corresponding_controller;
 	}
 	return (*this);
@@ -45,48 +46,52 @@ Cgi_Executor::~Cgi_Executor(void)
 
 void Cgi_Executor::start_cgi()
 {
-	if (pipe(this->pipe_write_request_body_to_cgi) < 0)
-		throw(CgiExecutorSystemFunctionFailed("pipe"));
-	if (dup2(this->pipe_write_request_body_to_cgi[0], STDIN_FILENO) < 0)
-		throw(CgiExecutorSystemFunctionFailed("dup2"));
+	this->body = "Hello, I am the hardcoded body \n\n\n";
+	this->init_env_map();
+	this->env_map_to_env_arr();
+	this->create_argv_arr();
+	this->put_request_body_into_stdin();
 	if (dup2(this->corresponding_controller->pipe_receive_cgi_answer[1],
 				STDOUT_FILENO) < 0)
 		throw(CgiExecutorSystemFunctionFailed("dup2"));
-	if (close(this->corresponding_controller->pipe_receive_cgi_answer[0]) < 0)
-		throw(CgiExecutorSystemFunctionFailed("close"));
 	if (close(this->corresponding_controller->pipe_receive_cgi_answer[1]) < 0)
 		throw(CgiExecutorSystemFunctionFailed("close"));
-	if (close(this->pipe_write_request_body_to_cgi[0]) < 0)
-		throw(CgiExecutorSystemFunctionFailed("close"));
-	this->write_request_body_to_pipe();
-	if (close(this->pipe_write_request_body_to_cgi[1]) < 0)
-		throw(CgiExecutorSystemFunctionFailed("close"));
-	this->init_env_map();
 	this->run_script();
 }
 
-void Cgi_Executor::write_request_body_to_pipe()
+void Cgi_Executor::put_request_body_into_stdin()
 {
-	int	bytes_written;
+	const char	*temp_file;
+	int			fd;
 
-	this->body = "Hello, I am the hardcoded body \n\n\n";
-	if (this->body.size() > 0)
+	temp_file = this->corresponding_controller->tmp_file_name.c_str();
+	std::ofstream out(temp_file);
+	out << this->body;
+	out.close();
+	fd = open(temp_file, O_RDONLY);
+	if (fd < 0)
 	{
-		bytes_written = write(this->pipe_write_request_body_to_cgi[1],
-								this->body.c_str(),
-								this->body.size());
-		if (bytes_written < 0)
-			throw(CgiExecutorSystemFunctionFailed("write"));
-		if (static_cast<size_t>(bytes_written) < this->body.size())
-			throw(CgiExecutorSystemFunctionFailed("written less bytes than supposed to!"));
+		perror("open");
+		_exit(1);
 	}
+	if (dup2(fd, STDIN_FILENO) < 0)
+	{
+		perror("dup2");
+		_exit(1);
+	}
+	if (close(fd) < 0)
+		throw(CgiExecutorSystemFunctionFailed("close"));
 }
 
 void Cgi_Executor::init_env_map()
 {
 	std::ostringstream oss;
-	oss << this->body;
+	oss << this->body.size();
 	std::string content_length = oss.str();
+	std::cout << "content length is <" << content_length;
+	std::cout << std::endl
+				<< std::endl
+				<< std::flush;
 	this->env_map["CONTENT_LENGTH"] = content_length;
 	this->env_map["CONTENT_TYPE"] = "VAL_CONTENT_TYPE";
 	this->env_map["GATEWAY_INTERFACE"] = "VAL_GATEWAY_INTERFACE";
@@ -101,35 +106,51 @@ void Cgi_Executor::init_env_map()
 	this->env_map["SERVER_PORT"] = "VAL_SERVER_PORT";
 	this->env_map["SERVER_PROTOCOL"] = "VAL_SERVER_PROTOCOL";
 	this->env_map["SERVER_SOFTWARE"] = "VAL_SERVER_SOFTWARE";
+	// add selected http headers to env map
 }
 
 void Cgi_Executor::env_map_to_env_arr()
 {
-	std::vector<std::string> env_strings;
-	for (std::map<std::string,
-					std::string>::const_iterator it = this->env_map.begin();
-			it != this->env_map.end();
-			++it)
+	int	i;
+
+	this->env_arr = new char *[this->env_map.size()];
+	if (!this->env_arr)
+		throw(CgiExecutorSystemFunctionFailed("new"));
+	i = 0;
+	std::map<std::string, std::string>::iterator it;
+	for (it = this->env_map.begin(); it != this->env_map.end(); ++it)
 	{
-		env_strings.push_back(it->first + "=" + it->second);
+		std::string val = it->first + "=" + it->second;
+		this->env_arr[i] = new char[val.size() + 1];
+		if (!this->env_arr[i])
+			throw(CgiExecutorSystemFunctionFailed("new"));
+		std::strcpy(this->env_arr[i], val.c_str());
+		i++;
+		this->env_arr[i] = NULL;
 	}
-	std::vector<char *> envp;
-	for (std::vector<std::string>::iterator it = env_strings.begin(); it != env_strings.end(); ++it)
-	{
-		this->env_arr.push_back(const_cast<char *>(it->c_str()));
-	}
-	this->env_arr.push_back(NULL);
+}
+
+void Cgi_Executor::create_argv_arr()
+{
+	std::string arg_0 = "/usr/bin/python3";
+	std::string arg_1 = "./print_env_body.py";
+	this->argv_arr = new char *[3];
+	if (!this->argv_arr)
+		throw(CgiExecutorSystemFunctionFailed("new"));
+	this->argv_arr[0] = new char[arg_0.size() + 1];
+	if (!this->argv_arr[0])
+		throw(CgiExecutorSystemFunctionFailed("new"));
+	std::strcpy(this->argv_arr[0], arg_0.c_str());
+	this->argv_arr[1] = new char[arg_1.size() + 1];
+	if (!this->argv_arr[1])
+		throw(CgiExecutorSystemFunctionFailed("new"));
+	std::strcpy(this->argv_arr[1], arg_1.c_str());
+	this->argv_arr[2] = NULL;
 }
 
 void Cgi_Executor::run_script()
 {
-	const char	*argv[3];
-
-	argv[0] = "/usr/bin/python3";
-	argv[1] = "./print_env_body.py";
-	argv[0] = NULL;
-	char *const *envp = &this->env_arr[0];
-	execve(argv[0], argv, envp);
+	execve(this->argv_arr[0], this->argv_arr, this->env_arr);
 	throw(CgiExecutorSystemFunctionFailed("execve"));
 }
 
@@ -145,7 +166,7 @@ Cgi_Executor::CgiExecutorSystemFunctionFailed::~CgiExecutorSystemFunctionFailed(
 const char *Cgi_Executor::CgiExecutorSystemFunctionFailed::what() const throw()
 {
 	this->_msg = "system call: ";
-	this->_msg += this->function_name;
+	this->_msg += this->_function_name;
 	this->_msg = " failed inside the Cgi_Executor";
 	this->_msg += "\n";
 	return (this->_msg.c_str());
