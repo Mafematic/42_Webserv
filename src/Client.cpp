@@ -2,7 +2,7 @@
 
 Client::Client(){}
 
-Client::Client(int clientFd, Serverhandler handler) : clientFd(clientFd), lastActivity(time(NULL)), handler(handler)
+Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_addr) : clientFd(clientFd), lastActivity(time(NULL)), handler(handler)
 {
 	_responseSentBytes = 0;
 	_responselength = 0;
@@ -10,6 +10,9 @@ Client::Client(int clientFd, Serverhandler handler) : clientFd(clientFd), lastAc
 	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
+
+	inet_ntop(AF_INET, &(client_addr.sin_addr), _client_ip, INET_ADDRSTRLEN);
+	_client_port = ntohs(client_addr.sin_port);
 }
 
 Client::Client(const Client &src)
@@ -192,7 +195,7 @@ void	Client::updateLastActivity()
 	lastActivity = time(NULL);
 }
 
-std::string	Client::getCompleteRequest()
+std::string	Client::getRequestStr()
 {
 	return _buffer;
 }
@@ -261,4 +264,14 @@ void	Client::setRequest()
 Request	Client::getRequest()
 {
 	return req;
+}
+
+int	Client::getPort()
+{
+	return _client_port;
+}
+
+std::string	Client::getIp()
+{
+	return _client_ip;
 }

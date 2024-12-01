@@ -27,11 +27,13 @@ FILES_PARSER :=	Config_Parser \
 REQUEST_PARSER :=	Request \
 					RequestRouter \
 					Uploader
+CGI := Cgi_Controller Cgi_Executor
 
-SRC	= $(FILES:=.cpp) $(FILES_PARSER:=.cpp) $(REQUEST_PARSER:=.cpp)
-PATHSRC		= ./ ./src/ ./src/config_parser ./src/utils/ ./src/request_parser
+
+SRC	= $(FILES:=.cpp) $(FILES_PARSER:=.cpp) $(REQUEST_PARSER:=.cpp) $(CGI:=.cpp)
+PATHSRC		= ./ ./src/ ./src/config_parser ./src/utils/ ./src/request_parser ./src/cgi
 VPATH = $(PATHSRC)
-INCLUDES:= -I./ -I./includes -I./src/config_parser -I./src/utils -I./src/request_parser
+INCLUDES:= -I./ -I./includes -I./src/config_parser -I./src/utils -I./src/request_parser -I./src/cgi
 OBJDIR  := objs/
 
 OBJFNAME = $(SRC:.cpp=.o)

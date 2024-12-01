@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Cgi_Executor.cpp                                   :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: smatthes <smatthes@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/08 14:55:39 by smatthes          #+#    #+#             */
-/*   Updated: 2024/12/01 15:58:30 by smatthes         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Cgi_Controller.hpp"
 #include "Cgi_Executor.hpp"
 
@@ -143,7 +131,7 @@ void Cgi_Executor::env_map_to_env_arr()
 void Cgi_Executor::create_argv_arr()
 {
 	std::string arg_0 = "/usr/bin/python3";
-	std::string arg_1 = "./print_env_body.py";
+	std::string arg_1 = "src/cgi/print_env_body.py";
 	this->argv_arr = new char *[3];
 	this->argv_arr[0] = NULL;
 	this->argv_arr[1] = NULL;

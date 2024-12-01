@@ -16,6 +16,15 @@
 #define BUFFER_SIZE 1000000
 #define CLIENT_TIMEOUT 12
 #define MAX_UPLOAD_SIZE 1000000
+#define CGI_TIMEOUT_SEC 10
+
+enum	e_cgi_status
+{
+	CGI_RUNNING,
+	CGI_EXITED_NORMAL,
+	CGI_EXITED_ERROR,
+	CGI_KILLED_TIMEOUT
+};
 
 enum	State
 {
@@ -27,6 +36,7 @@ enum	State
 	SEND_NOT_COMPLETE = 1,
 	SEND_COMPLETE = 2
 };
+
 
 #include <iostream>
 #include <string>
@@ -56,3 +66,4 @@ enum	State
 #include <sys/stat.h>
 #include <numeric>
 #include <cstdlib>
+#include <sys/wait.h>

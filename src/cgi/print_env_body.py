@@ -10,9 +10,9 @@ def main():
     print()
     for key, value in os.environ.items():
         print(f"{key}={value}")
-    
+
     print("\nInput Data:")
-    
+
     # Read from stdin (e.g., POST request body)
     content_length = os.environ.get('CONTENT_LENGTH')
     if content_length:
@@ -28,8 +28,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
 
 

@@ -1,4 +1,5 @@
 #include "ServerManager.hpp"
+#include "cgi/Cgi_Controller.hpp"
 
 void ServerManager::setup(std::string config_path)
 {
@@ -47,10 +48,18 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	else if (status == READ_NOT_COMPLETE)
 		return;
 	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
-	std::cout << PURPLE << client.getCompleteRequest() << RESET << std::endl;
+	std::cout << PURPLE << client.getRequestStr() << RESET << std::endl;
 
 	client.setRequest();
 	client.setServer(servers);
+	if (client.getRequest().getPath().find("/src/cgi/print_env_body.py") != std::string::npos)
+	{
+		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
+		Cgi_Controller controller(client);
+		controller.start_cgi();
+		acceptNewConnection()
+	}
+
 	client.setResponse();
 
 	client.updateLastActivity();
@@ -149,7 +158,9 @@ void	ServerManager::closeConnection(Client &client, std::string reason)
 
 void	ServerManager::acceptNewConnection(Serverhandler handler)
 {
-	int clientSocket = accept(_eventFd, NULL, NULL);
+	struct sockaddr_in client_addr {};
+	socklen_t client_len = sizeof(client_addr);
+	int clientSocket = accept(_eventFd, (struct sockaddr*)&client_addr, &client_len);
 	if (clientSocket >= 0)
 	{
 		setNonBlocking(clientSocket);
@@ -163,7 +174,7 @@ void	ServerManager::acceptNewConnection(Serverhandler handler)
 			return ;
 		}
 		std::cout << GREEN << "Accepted new client connection : ClientFd " << clientSocket << RESET << std::endl;
-		Client new_client(clientSocket, handler);
+		Client new_client(clientSocket, handler, client_addr);
 		_clients[clientSocket] = new_client;
 	}
 	else

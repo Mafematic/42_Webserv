@@ -7,7 +7,7 @@ FILES 	:=	main Cgi_Controller Cgi_Executor
 SRC	= $(FILES:=.cpp)
 PATHSRC		= ./
 VPATH = $(PATHSRC)
-INCLUDES:= -I./ 
+INCLUDES:= -I./ -I../../includes
 OBJDIR  := objs/
 
 OBJFNAME = $(SRC:.cpp=.o)

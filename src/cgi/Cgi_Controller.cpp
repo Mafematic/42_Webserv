@@ -12,7 +12,7 @@
 
 #include "Cgi_Controller.hpp"
 
-Cgi_Controller::Cgi_Controller() : status(CGI_RUNNING)
+Cgi_Controller::Cgi_Controller(Client client) : corresponding_client(client), status(CGI_RUNNING)
 {
 	this->tmp_file_name = "aaa_" + this->get_random_string(32);
 	return ;
@@ -66,26 +66,26 @@ void Cgi_Controller::start_cgi()
 		Cgi_Executor executor(this);
 		executor.start_cgi();
 	}
-	else if (this->executor_pid_id > 0)
-	{
-		// this is only for testing purposes 
-		// >>
-		if (close(this->pipe_receive_cgi_answer[1]) < 0)
-			throw(CgiControllerSystemFunctionFailed("close"));
-		while (this->status == CGI_RUNNING)
-		{
-			this->check_cgi();
-			sleep(1);
-		}
-		std::cout << "CGI exited with status " << this->check_cgi() <<std::endl;
-		read(this->pipe_receive_cgi_answer[0], buffer, 1000);
-		if (std::remove(this->tmp_file_name.c_str()) < 0)
-			throw(CgiControllerSystemFunctionFailed("remove"));
-		std::cout << buffer;
-		// <<
-		// this is only for testing purposes 
-	}
-	else
+	// else if (this->executor_pid_id > 0)
+	// {
+	// 	// this is only for testing purposes
+	// 	// >>
+	// 	if (close(this->pipe_receive_cgi_answer[1]) < 0)
+	// 		throw(CgiControllerSystemFunctionFailed("close"));
+	// 	while (this->status == CGI_RUNNING)
+	// 	{
+	// 		this->check_cgi();
+	// 		sleep(1);
+	// 	}
+	// 	std::cout << "CGI exited with status " << this->check_cgi() <<std::endl;
+	// 	read(this->pipe_receive_cgi_answer[0], buffer, 1000);
+	// 	if (std::remove(this->tmp_file_name.c_str()) < 0)
+	// 		throw(CgiControllerSystemFunctionFailed("remove"));
+	// 	std::cout << buffer;
+	// 	// <<
+	// 	// this is only for testing purposes
+	// }
+	else if (this->executor_pid_id < 0)
 		throw(CgiControllerSystemFunctionFailed("fork"));
 }
 

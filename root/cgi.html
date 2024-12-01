@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGI Python Execution</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            background-color: #28a745;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #responseDisplay {
+            margin-top: 20px;
+            font-size: 18px;
+            white-space: pre-wrap; /* Preserve formatting */
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Execute Python Script via CGI</h1>
+        <button onclick="executePythonScript()">Run Python Script</button>
+        <div id="responseDisplay"></div>
+    </div>
+
+    <script>
+        function executePythonScript() {
+            fetch('/src/cgi/print_env_body.py')  // Adjust the path to your Python script
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    document.getElementById('responseDisplay').innerText = data;
+                })
+                .catch(error => {
+                    document.getElementById('responseDisplay').innerText = 'Error: ' + error.message;
+                });
+        }
+    </script>
+</body>
+</html>

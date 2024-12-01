@@ -29,14 +29,16 @@ class Client
 
 		Server	server;
 		Request	req;
-
 		// Route & Route
 		// check_header_received()
 
+		struct sockaddr_in	client_addr;
+		int					_client_port;
+		char				_client_ip[INET_ADDRSTRLEN];
 
 	public:
 		Client();
-		Client(int clientFd, Serverhandler handler);
+		Client(int clientFd, Serverhandler handler, struct sockaddr_in client_addr);
 		Client(const Client &src);
 		~Client();
 
@@ -57,7 +59,7 @@ class Client
 		int		sendResponse();
 		void	clearResponse();
 
-		std::string getCompleteRequest();
+		std::string getRequestStr();
 		void clearBuffer();
 		void setChunked(bool isChunked);
 		bool isChunked();
@@ -68,6 +70,9 @@ class Client
 
 		void	setRequest();
 		Request	getRequest();
+
+		int		getPort();
+		std::string	getIp();
 };
 
 #endif
