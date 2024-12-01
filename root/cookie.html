@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Demonstration</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #cookieDisplay {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Cookie Demonstration</h1>
+        <button onclick="setCookie()">Set Cookie</button>
+        <button onclick="getCookie()">Get Cookie</button>
+        <button onclick="deleteCookie()">Delete Cookie</button>
+        <div id="cookieDisplay"></div>
+    </div>
+
+    <script>
+        // Set a cookie using the 'document.cookie' property
+        function setCookie() {
+            document.cookie = "user=42Berlin; path=/; max-age=3600";  // Cookie valid for 1 hour
+            alert("Cookie 'user' has been set!");
+        }
+
+        // Retrieve and display the 'user' cookie
+        function getCookie() {
+            const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+                const [name, value] = cookie.split('=');
+                acc[name] = value;
+                return acc;
+            }, {});
+
+            const userCookie = cookies['user'];
+            if (userCookie) {
+                document.getElementById('cookieDisplay').innerText = `Cookie value: ${userCookie}`;
+            } else {
+                document.getElementById('cookieDisplay').innerText = "No 'user' cookie found!";
+            }
+        }
+
+        // Delete the 'user' cookie
+        function deleteCookie() {
+            document.cookie = "user=; path=/; max-age=0";  // Set expiration to the past
+            document.getElementById('cookieDisplay').innerText = "Cookie 'user' has been deleted!";
+        }
+    </script>
+</body>
+</html>

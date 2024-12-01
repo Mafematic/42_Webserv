@@ -212,9 +212,28 @@ bool Client::isChunked()
 	return _isChunked;
 }
 
-void Client::setServer(Server server)
+void Client::setServer(std::vector<Server> servers)
 {
-	this->server = server;
+	if (servers.size() == 1)
+		this->server = servers[0];
+	else
+	{
+		this->server = servers[0];
+		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
+		{
+			std::vector<std::string> server_names = it->get_server_name();
+			for (std::vector<std::string>::iterator it2 = server_names.begin(); it2 != server_names.end(); ++it2)
+			{
+				std::string host = req.getHeader("Host");
+				if (!host.empty())
+				{
+					host = host.substr(0, host.find(":"));
+					if (host == *it2)
+						this->server = *it;
+				}
+			}
+		}
+	}
 }
 
 Server Client::getServer()
@@ -222,13 +241,24 @@ Server Client::getServer()
 	return server;
 }
 
-void Client::setResponse(std::string response)
+void Client::setResponse()
 {
-	this->response = response;
+	this->response = RequestRouter::route(req, server);
 	_responselength = response.length();
 }
 
 std::string Client::getResponse()
 {
 	return response;
+}
+
+void	Client::setRequest()
+{
+	req = Request(_buffer);
+	clearBuffer();
+}
+
+Request	Client::getRequest()
+{
+	return req;
 }

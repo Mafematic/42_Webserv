@@ -32,6 +32,6 @@ int main(int argc, char **argv)
 		}
 	}
 	else
-		std::cerr << RED << "Invalid number of arguments! \nREQUIERMENT: ./webserv /CONFIG_FILE" << std::endl;
+		std::cerr << RED << "Invalid number of arguments! \nREQUIERMENT: ./webserv /CONFIG_FILE" << RESET << std::endl;
 	return 0;
 }

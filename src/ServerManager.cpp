@@ -29,32 +29,6 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-Server ServerManager::getServer(std::vector<Server> servers, Request req)
-{
-	Server server;
-	if (servers.size() == 1)
-		server = servers[0];
-	else
-	{
-		server = servers[0];
-		for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it)
-		{
-			std::vector<std::string> server_names = it->get_server_name();
-			for (std::vector<std::string>::iterator it2 = server_names.begin(); it2 != server_names.end(); ++it2)
-			{
-				std::string host = req.getHeader("Host");
-				if (!host.empty())
-				{
-					host = host.substr(0, host.find(":"));
-					if (host == *it2)
-						return *it;
-				}
-			}
-		}
-	}
-	return server;
-}
-
 //-------------------------------------------------HANDLE CLIENT REQUEST & RESPONSE-------------------------------------------------//
 
 void ServerManager::handleClientRequest(Client &client, std::vector<Server> servers)
@@ -73,13 +47,11 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	else if (status == READ_NOT_COMPLETE)
 		return;
 	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
-	//std::cout << PURPLE << "++++ Buffer: " << client.getCompleteRequest() << RESET << std::endl;
+	std::cout << PURPLE << client.getCompleteRequest() << RESET << std::endl;
 
-	Request req(client.getCompleteRequest());
-	client.setServer(getServer(servers, req));
-	std::string response = RequestRouter::route(req, client.getServer());
-	client.setResponse(response);
-	client.clearBuffer();
+	client.setRequest();
+	client.setServer(servers);
+	client.setResponse();
 
 	client.updateLastActivity();
 	std::cout << LIGTH BLUE << "+++++ [Request processed] : ClientFd " << client.getFd() << RESET << std::endl;
@@ -93,6 +65,7 @@ void	ServerManager::handleClientResponse(Client &client)
 	if (client.getResponse().find("Connection: close") != std::string::npos)
 		close = 1;
 
+	std::cout << PURPLE << client.getResponse() << std::endl;
 	int	status = client.sendResponse();
 	if (status == SEND_ERROR)
 		return	closeConnection(client, "[Failed to send response]");

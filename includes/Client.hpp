@@ -5,6 +5,8 @@
 #include <ctime>
 
 #include "Serverhandler.hpp"
+#include "Request.hpp"
+#include "RequestRouter.hpp"
 
 class Client
 {
@@ -26,10 +28,9 @@ class Client
 		std::string			_buffer;
 
 		Server	server;
+		Request	req;
+
 		// Route & Route
-		// Request & cur_request
-
-
 		// check_header_received()
 
 
@@ -60,10 +61,13 @@ class Client
 		void clearBuffer();
 		void setChunked(bool isChunked);
 		bool isChunked();
-		void setServer(Server server);
+		void setServer(std::vector<Server> servers);
 		Server getServer();
-		void setResponse(std::string response);
+		void setResponse();
 		std::string getResponse();
+
+		void	setRequest();
+		Request	getRequest();
 };
 
 #endif

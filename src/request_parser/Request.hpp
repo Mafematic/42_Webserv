@@ -26,7 +26,11 @@ class Request
 		void _validateRequest();
 
 	public:
+		Request();
 		Request(const std::string &raw_request);
+		Request(const Request &src);
+		Request &operator=(const Request &src);
+		~Request();
 
 		bool isValid() const;
 		std::string getMethod() const;
@@ -42,7 +46,7 @@ class Request
 		std::string getBody() const;
 
 		void setKeepAlive(bool keepAlive);
-    	bool getKeepAlive() const; 
+    	bool getKeepAlive() const;
 
 };
 

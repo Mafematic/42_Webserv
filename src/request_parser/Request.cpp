@@ -3,13 +3,36 @@
 #include <iostream>
 #include <algorithm>
 
+Request::Request(){}
 
-Request::Request(const std::string &raw_request)
-    : _valid(true), _raw_request(raw_request), _keepAlive(true)
+Request::Request(const std::string &raw_request) : _valid(true), _raw_request(raw_request), _keepAlive(true)
 {
     _parseRequest();
     _validateRequest();
 }
+
+Request::Request(const Request &src)
+{
+    *this = src;
+}
+
+Request &Request::operator=(const Request &src)
+{
+    if (this == &src)
+        return *this;
+    _method = src._method;
+    _path = src._path;
+    _version = src._version;
+    _headers = src._headers;
+    _valid = src._valid;
+    _error_message = src._error_message;
+    _raw_request = src._raw_request;
+    _body = src._body;
+    _keepAlive = src._keepAlive;
+    return *this;
+}
+
+Request::~Request(){}
 
 void Request::_parseRequest()
 {

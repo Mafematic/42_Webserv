@@ -39,6 +39,15 @@
         button:hover {
             background-color: #0056b3;
         }
+
+        .bonus-button {
+            background-color: rgb(157, 27, 193);
+        }
+
+        .bonus-button:hover {
+            background-color: rgb(90, 22, 133); /* Optional: Change color on hover */
+        }
+
     </style>
 </head>
 
@@ -48,6 +57,9 @@
         <li><button onclick="window.location.href='form.html'">Check POST Method with Form</button></li>
         <li><button onclick="window.location.href='upload.html'">Upload File with POST</button></li>
         <li><button onclick="window.location.href='/delete.html'">DELETE a File</button></li>
+        <br></br>
+        <li><button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button></li>
+        <li><button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button></li>
     </ul>
 
     <div id="content"></div>
