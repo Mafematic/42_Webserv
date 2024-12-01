@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webserver Features</title>
     <style>
-        body {
+        /* body {
             display: flex;
             justify-content: center;
             align-items: center;
@@ -14,6 +14,36 @@
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
+        } */
+
+        .centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .grid-container {
+            width: 80%;
+            height: 80%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .grid-item {
+            background-color: #007bff;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        grid-item:hover {
+            background-color: #0056b3;
         }
 
         ul {
@@ -45,22 +75,35 @@
         }
 
         .bonus-button:hover {
-            background-color: rgb(90, 22, 133); /* Optional: Change color on hover */
+            background-color: rgb(90, 22, 133);
+            /* Optional: Change color on hover */
         }
+
 
     </style>
 </head>
 
 <body>
-    <ul>
-        <li><button onclick="window.location.href='/about.html'">Simple GET Request</button></li>
-        <li><button onclick="window.location.href='form.html'">Check POST Method with Form</button></li>
-        <li><button onclick="window.location.href='upload.html'">Upload File with POST</button></li>
-        <li><button onclick="window.location.href='/delete.html'">DELETE a File</button></li>
-        <br></br>
-        <li><button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button></li>
-        <li><button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button></li>
-    </ul>
+    <div class="centered">
+        <div class="grid-container">
+            <button class="grid-item button" onclick="window.location.href='/about.html'">Simple GET Request</button>
+            <button class="grid-item button" onclick="window.location.href='form.html'">Check POST Method with Form</button>
+            <button class="grid-item button" onclick="window.location.href='upload.html'">Upload File with POST</button>
+            <button class="grid-item button" onclick="window.location.href='/delete.html'">DELETE a File</button>
+            <button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button>
+            <button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button>
+
+        </div>
+    </div>
+    <!-- <div>
+        <ul>
+            <li><button onclick="window.location.href='/about.html'">Simple GET Request</button></li>
+            <li><button onclick="window.location.href='form.html'">Check POST Method with Form</button></li>
+            <li><button onclick="window.location.href='upload.html'">Upload File with POST</button></li>
+            <li><button onclick="window.location.href='/delete.html'">DELETE a File</button></li>
+            <br></br>
+        </ul>
+    </div> -->
 
     <div id="content"></div>
 
