@@ -17,6 +17,16 @@
 #include "Cgi_Executor.hpp"
 #include "webserv.hpp"
 
+#define CGI_TIMEOUT_SEC 10
+
+enum	e_cgi_status
+{
+	CGI_RUNNING,
+	CGI_EXITED_NORMAL,
+	CGI_EXITED_ERROR,
+	CGI_KILLED_TIMEOUT
+};
+
 class Cgi_Controller
 {
   public:
@@ -26,23 +36,10 @@ class Cgi_Controller
 	virtual ~Cgi_Controller(void);
 
 	void start_cgi();
-	bool check_cgi_executor_timeout();
-	bool check_cgi_executor_finished();
-	void read_cgi_executor_response();
+	e_cgi_status check_cgi();
 
-	std::string get_random_string(size_t length);
-
-	int executor_pid_id;
 	int pipe_receive_cgi_answer[2];
-	std::basic_string<unsigned char> child_response_buffer;
-	bool child_response_fully_received;
-	bool child_finished;
-	time_t executor_start_time;
 	std::string tmp_file_name;
-
-	// Request &corresponding_request;
-	// Server &corresponding_server;
-	// Client &corresponding_client;
 
 	class CgiControllerSystemFunctionFailed : public std::exception
 	{
@@ -57,4 +54,12 @@ class Cgi_Controller
 	};
 
   private:
+	int executor_pid_id;
+	e_cgi_status status;
+	time_t executor_start_time;
+
+	std::string get_random_string(size_t length);
+	bool check_cgi_executor_timeout();
+	bool check_cgi_executor_finished();
+	// Client &corresponding_client;
 };

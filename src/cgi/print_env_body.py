@@ -4,7 +4,6 @@ import os
 import sys
 import time
 
-
 def main():
     # Print all environment variables
     print("Environment Variables:")
@@ -29,6 +28,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
