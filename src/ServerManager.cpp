@@ -1,5 +1,4 @@
 #include "ServerManager.hpp"
-#include "cgi/Cgi_Controller.hpp"
 
 void ServerManager::setup(std::string config_path)
 {
@@ -34,6 +33,8 @@ void ServerManager::setup(std::string config_path)
 
 void ServerManager::handleClientRequest(Client &client, std::vector<Server> servers)
 {
+	std::cout << LIGTH BLUE << "++++ [New request] : ClientFd " << client.getFd() << RESET << std::endl;
+
 	int status = client.readRequest();
 	if (status == READ_ERROR)
 	{
@@ -48,18 +49,9 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	else if (status == READ_NOT_COMPLETE)
 		return;
 	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
-	std::cout << PURPLE << client.getRequestStr() << RESET << std::endl;
 
 	client.setRequest();
 	client.setServer(servers);
-	if (client.getRequest().getPath().find("/src/cgi/print_env_body.py") != std::string::npos)
-	{
-		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
-		Cgi_Controller controller(client);
-		controller.start_cgi();
-		return ;
-	}
-
 	client.setResponse();
 
 	client.updateLastActivity();
@@ -127,8 +119,6 @@ void ServerManager::run()
 			}
 		}
 		checkTimeout();
-
-
 	}
 	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }

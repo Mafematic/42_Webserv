@@ -107,7 +107,7 @@ e_cgi_status Cgi_Controller::check_cgi()
 	result = waitpid(this->executor_pid_id, &status, WNOHANG);
 	if (result == 0)
 	{
-		std::cout << "Child process is still running..." << std::endl;
+		//std::cout << "Child process is still running..." << std::endl;
 		return (this->status);
 	}
 	else if (result == this->executor_pid_id)
@@ -131,7 +131,7 @@ e_cgi_status Cgi_Controller::check_cgi()
 
 bool Cgi_Controller::check_cgi_executor_timeout()
 {
-	std::cout << "Checking for CGI Timeout..." << std::endl;
+	//std::cout << "Checking for CGI Timeout..." << std::endl;
 	if (time(NULL) - this->executor_start_time > CGI_TIMEOUT_SEC)
 		return (true);
 	return (false);

@@ -5,6 +5,7 @@
 #include "Serverhandler.hpp"
 #include "RequestRouter.hpp"
 #include "Config_Parser.hpp"
+#include "Cgi_Controller.hpp"
 
 extern bool g_running;
 
@@ -29,12 +30,15 @@ class ServerManager
 		int							_epollFd;
 		int							_eventFd;
 
+		std::map<int, Cgi_Controller> cgi_controllers;
+
 		int		createEpoll();
 		int		epollAddSockets();
 		void	acceptNewConnection(Serverhandler handler);
 		void	acceptNewCGIConnection(Client client);
 		void	setNonBlocking(int clientSocket);
 		void	checkTimeout();
+		void	checkForCGI();
 };
 
 #endif

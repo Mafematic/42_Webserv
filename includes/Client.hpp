@@ -25,13 +25,12 @@ class Client
 
 		size_t				_contentLength;
 		size_t				_bytesReceived;
-		std::string			_buffer;
+		std::basic_string<char>			_buffer;
 
 		Server	server;
 		Request	req;
 		// Route & Route
 		// check_header_received()
-
 		struct sockaddr_in	client_addr;
 		int					_client_port;
 		char				_client_ip[INET_ADDRSTRLEN];

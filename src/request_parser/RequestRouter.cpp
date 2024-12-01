@@ -121,7 +121,6 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
 	}
 	statusLine += "\r\n\r\n";
 	statusLine += content;
-	std::cout << "+++ Repsonse: " << statusLine << std::endl;
 
 	return statusLine;
 }
