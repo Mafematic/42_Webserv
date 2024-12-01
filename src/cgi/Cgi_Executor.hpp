@@ -25,23 +25,18 @@ class Cgi_Executor
 
 	void start_cgi();
 	void init_env_map();
-	void write_request_body_to_pipe();
 	void put_request_body_into_stdin();
 	void run_script();
 	void env_map_to_env_arr();
 	void create_argv_arr();
 
 	Cgi_Controller *corresponding_controller;
-	// int pipe_write_request_body_to_cgi[2];
 	std::map<std::string, std::string> env_map;
 	char **env_arr;
 	char **argv_arr;
-
 	std::string body;
 
 	// write http headers as env vars, not all, only selected
-	// check if file exists
-	// check if have access rights exec
 
 	class CgiExecutorSystemFunctionFailed : public std::exception
 	{

@@ -54,6 +54,9 @@ void Cgi_Controller::start_cgi()
 {
 	char	buffer[10000];
 
+	buffer[1] = 'A';
+	buffer[0] = '\0';
+
 	this->executor_start_time = time(NULL);
 	if (pipe(this->pipe_receive_cgi_answer) < 0)
 		throw(CgiControllerSystemFunctionFailed("pipe"));
