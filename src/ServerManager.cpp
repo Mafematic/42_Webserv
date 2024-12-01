@@ -57,7 +57,7 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
 		Cgi_Controller controller(client);
 		controller.start_cgi();
-		acceptNewConnection()
+		return ;
 	}
 
 	client.setResponse();
@@ -127,6 +127,8 @@ void ServerManager::run()
 			}
 		}
 		checkTimeout();
+
+
 	}
 	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }
@@ -158,7 +160,7 @@ void	ServerManager::closeConnection(Client &client, std::string reason)
 
 void	ServerManager::acceptNewConnection(Serverhandler handler)
 {
-	struct sockaddr_in client_addr {};
+	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	int clientSocket = accept(_eventFd, (struct sockaddr*)&client_addr, &client_len);
 	if (clientSocket >= 0)

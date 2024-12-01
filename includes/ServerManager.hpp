@@ -32,6 +32,7 @@ class ServerManager
 		int		createEpoll();
 		int		epollAddSockets();
 		void	acceptNewConnection(Serverhandler handler);
+		void	acceptNewCGIConnection(Client client);
 		void	setNonBlocking(int clientSocket);
 		void	checkTimeout();
 };

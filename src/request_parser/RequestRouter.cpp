@@ -80,8 +80,6 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 
 std::string RequestRouter::_serveFile(const std::string &filepath, int statusCode, const Request &req)
 {
-	std::cout << filepath;
-	std::cout << req.getRawRequest();
 	std::string content = "";
 
 	if (req.getMethod() != "DELETE")
@@ -137,7 +135,6 @@ Route RequestRouter::_getRoute(const Server &server, const Request &req)
 	{
 		if (path.find(routes[i].get_location()) == 0)
 		{
-			std::cout << "here****************" << std::endl;
 			return routes[i];
 		}
 	}
