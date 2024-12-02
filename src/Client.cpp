@@ -37,6 +37,9 @@ Client	&Client::operator=(const Client &src)
 	_bytesReceived = src._bytesReceived;
 	_responseSentBytes = src._responseSentBytes;
 	_responselength = src._responselength;
+	req = src.req;
+	_client_port = src._client_port;
+	std::strcpy(_client_ip, src._client_ip);
 	return *this;
 }
 
