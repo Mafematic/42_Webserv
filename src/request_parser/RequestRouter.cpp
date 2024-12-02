@@ -75,20 +75,19 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 		if (req.getPath() == "/")
 		{
 			filepath = route.get_root() + "/index.html";
-			if (!util::fileExists(filepath))
-			{
-				// Test #7
-				customError = getCustomErrorPage(route, 404);
-				return _serveFile(customError, 404, req);
-			}
-			return _serveFile(filepath, 200, req);
+		}
+		else
+		{
+			filepath = route.get_root() + req.getPath();
 		}
 
 		if (!util::fileExists(filepath))
 		{
+			// Test #7
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
+
 		return _serveFile(filepath, 200, req);
 	}
 
@@ -102,12 +101,14 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 			}
 			else
 			{
+				// Test #8
 				customError = getCustomErrorPage(route, 500);
 				return _serveFile(customError, 500, req);
 			}
 		}
 		else
 		{
+			// Test #9
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req); // File not found
    		}
@@ -176,7 +177,6 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
     {
         statusLine += content;
     }
-
     std::cout << "+++ Response: " << statusLine << std::endl;
 
     return statusLine;
