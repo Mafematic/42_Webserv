@@ -274,5 +274,10 @@ bool directoryExists(const std::string &path)
 	return (info.st_mode & S_IFDIR) != 0;
 }
 
+bool fileExists(const std::string &path)
+{
+    struct stat buffer;
+    return (stat(path.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode));
+}
 
 } // namespace util

@@ -32,7 +32,7 @@ class Client
 		// Route & Route
 		// check_header_received()
 
-		struct sockaddr_in	client_addr;
+		//struct sockaddr_in	client_addr;
 		int					_client_port;
 		char				_client_ip[INET_ADDRSTRLEN];
 

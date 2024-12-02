@@ -52,13 +52,14 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 
 	client.setRequest();
 	client.setServer(servers);
+	/*
 	if (client.getRequest().getPath().find("/src/cgi/print_env_body.py") != std::string::npos)
 	{
 		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
 		Cgi_Controller controller(client);
 		controller.start_cgi();
-		acceptNewConnection()
-	}
+		acceptNewConnection();
+	}*/
 
 	client.setResponse();
 
@@ -158,7 +159,7 @@ void	ServerManager::closeConnection(Client &client, std::string reason)
 
 void	ServerManager::acceptNewConnection(Serverhandler handler)
 {
-	struct sockaddr_in client_addr {};
+	struct sockaddr_in client_addr;
 	socklen_t client_len = sizeof(client_addr);
 	int clientSocket = accept(_eventFd, (struct sockaddr*)&client_addr, &client_len);
 	if (clientSocket >= 0)
