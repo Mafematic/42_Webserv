@@ -2,21 +2,42 @@
 #include "Uploader.hpp"
 #include "util.hpp"
 #include "webserv.hpp"
+#include "Server.hpp"
 
 #include <fstream>     // For std::ifstream
 #include <string>
 
+std::string getCustomErrorPage(const Route &route, int statusCode)
+{
+    std::map<std::string, std::vector<std::string> > errorPages = route.get_error_pages();
+    std::string code = util::to_string(statusCode);
+
+    if (errorPages.count(code) && util::fileExists(route.get_root() + errorPages[code][0]))
+    {
+        return route.get_root() + errorPages[code][0];
+    }
+
+    // Return the default error page if no custom page exists
+    return "./default_pages/" + code + ".html";
+}
+
 std::string RequestRouter::route(const Request &req, const Server &server)
 {
+	std::string customError;
+	Route route = _getRoute(server, req);
+	std::string filepath = route.get_root() + req.getPath();
+	
+	// Test #1
 	if (!req.isValid()) // Early exit for invalid requests
 	{
-		return _serveFile(server.get_root() + "/400.html", 400, req);
+		customError = getCustomErrorPage(route, 400);
+        return _serveFile(customError, 400, req);
 	}
-
-	Route route = _getRoute(server, req);
+	// Test #2
 	if (!util::directoryExists(route.get_root()))
 	{
-		return _serveFile("root/500.html", 500, req); // Custom error page for invalid root
+		customError = getCustomErrorPage(route, 500);
+        return _serveFile(customError, 500, req); // Custom error page for invalid root
 	}
 
 	if (req.getMethod() == "POST" && req.getPath() == "/upload")
@@ -25,106 +46,143 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 		std::istringstream iss(req.getHeader("Content-Length"));
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > MAX_UPLOAD_SIZE)
 		{
-			return _serveFile(server.get_root() + "/413.html", 413, req); // Payload too large
+			// Test #3
+			customError = getCustomErrorPage(route, 413);
+        	return _serveFile(customError, 413, req); // Payload too large
 		}
 
 		FileUploader uploader(req);
 		if (uploader.isMalformed())
 		{
-			return _serveFile(server.get_root() + "/400.html", 400, req); // Malformed request
+			// Test #4
+			customError = getCustomErrorPage(route, 400);
+        	return _serveFile(customError, 400, req); // Malformed request
 		}
 
 		if (uploader.handleRequest())
 		{
-			return "HTTP/1.1 303 See Other\r\n"
-				   "Location: /303.html\r\n"
-				   "Connection: close\r\n"
-				   "\r\n";
+			// Test #5 - NO ERROR Code
+			std::string redirectPage = getCustomErrorPage(route, 303);
+    		return _serveFile(redirectPage, 303, req);
 		}
-
-		return _serveFile(server.get_root() + "/500.html", 500, req); // Internal server error
+		// Test #6 
+		customError = getCustomErrorPage(route, 500);
+        return _serveFile(customError, 500, req); // Internal server error
 	}
 
 	if (req.getMethod() == "GET")
 	{
 		if (req.getPath() == "/")
 		{
-			return _serveFile(route.get_root() + "/index.html", 200, req);
+			filepath = route.get_root() + "/index.html";
+			if (!util::fileExists(filepath))
+			{
+				// Test #7
+				customError = getCustomErrorPage(route, 404);
+				return _serveFile(customError, 404, req);
+			}
+			return _serveFile(filepath, 200, req);
 		}
-		return _serveFile(route.get_root() + req.getPath(), 200, req);
+
+		if (!util::fileExists(filepath))
+		{
+			customError = getCustomErrorPage(route, 404);
+			return _serveFile(customError, 404, req);
+		}
+		return _serveFile(filepath, 200, req);
 	}
 
 	if (req.getMethod() == "DELETE")
 	{
-		std::string filepath = route.get_root() + req.getPath();
-		bool exists = std::ifstream(filepath.c_str()).good();
-		if (exists)
+		if (util::fileExists(filepath))
 		{
 			if (remove(filepath.c_str()) == 0)
 			{
-				return _serveFile(server.get_root() + "/200.html", 200, req);
+				return _serveFile(filepath, 200, req);
 			}
 			else
 			{
-				return _serveFile(server.get_root() +"/500.html", 500, req); // Internal server error
+				customError = getCustomErrorPage(route, 500);
+				return _serveFile(customError, 500, req);
 			}
 		}
 		else
 		{
-			return _serveFile(server.get_root() + "/404.html", 404, req); // File not found
+			customError = getCustomErrorPage(route, 404);
+			return _serveFile(customError, 404, req); // File not found
    		}
 	}
 
-	return _serveFile(server.get_root() + "root/404.html", 404, req);
+	customError = getCustomErrorPage(route, 404);
+	return _serveFile(customError, 404, req);
 }
 
 std::string RequestRouter::_serveFile(const std::string &filepath, int statusCode, const Request &req)
 {
-	std::string content = "";
+    std::string content = "";
+    if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
+    {
+        std::ifstream file(filepath.c_str());
+        if (file.is_open())
+        {
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            file.close();
+            content = buffer.str();
+        }
+    }
 
-	if (req.getMethod() != "DELETE")
-	{
-		std::ifstream file(filepath.c_str());
-		if (file.is_open())
-		{
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			file.close();
-			content = buffer.str();
-		}
-	}
-	std::string statusLine;
-	switch (statusCode)
-	{
-	case 200:
-		statusLine = "HTTP/1.1 200 OK";
-		break;
-	case 404:
-		statusLine = "HTTP/1.1 404 Not Found";
-		break;
-	case 500:
-		statusLine = "HTTP/1.1 500 Internal Server Error";
-		break;
-	default:
-		statusLine = "HTTP/1.1 200 OK";
-	}
-	statusLine += "\r\nContent-Type: text/html";
-	statusLine += "\r\nContent-Length: ";
-	statusLine += util::to_string(content.size());
-	if (req.getKeepAlive())
-	{
-		statusLine += "\r\nConnection: keep-alive";
-	}
-	else
-	{
-		statusLine += "\r\nConnection: close";
-	}
-	statusLine += "\r\n\r\n";
-	statusLine += content;
-	std::cout << "+++ Repsonse: " << statusLine << std::endl;
+    std::string statusLine;
+    switch (statusCode)
+    {
+        case 200:
+            statusLine = "HTTP/1.1 200 OK";
+            break;
+        case 303:
+            statusLine = "HTTP/1.1 303 See Other";
+            break;
+        case 404:
+            statusLine = "HTTP/1.1 404 Not Found";
+            break;
+        case 413:
+            statusLine = "HTTP/1.1 413 Payload Too Large";
+            break;
+        case 500:
+            statusLine = "HTTP/1.1 500 Internal Server Error";
+            break;
+        default:
+            statusLine = "HTTP/1.1 200 OK";
+    }
 
-	return statusLine;
+    statusLine += "\r\nContent-Type: text/html";
+    statusLine += "\r\nContent-Length: ";
+    statusLine += util::to_string(content.size());
+
+    if (statusCode == 303) // Include Location header for redirection
+	{
+		statusLine += "\r\nLocation: /303.html"; // Redirect to /303.html
+	}
+
+    if (req.getKeepAlive())
+    {
+        statusLine += "\r\nConnection: keep-alive";
+    }
+    else
+    {
+        statusLine += "\r\nConnection: close";
+    }
+    statusLine += "\r\n\r\n";
+    if (statusCode != 303) // Avoid body for 303
+    {
+        statusLine += content;
+    }
+
+    std::cout << "+++ Response: " << statusLine << std::endl;
+
+    return statusLine;
 }
+
+
 
 Route RequestRouter::_getRoute(const Server &server, const Request &req)
 {
