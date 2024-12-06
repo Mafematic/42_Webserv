@@ -100,7 +100,17 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
-
+		else
+		{
+			// Handle other paths
+			filepath = route.get_root() + req.getPath();
+			if (util::fileExists(filepath))
+			{
+				return _serveFile(filepath, 200, req);
+			}
+			customError = getCustomErrorPage(route, 404);
+			return _serveFile(customError, 404, req);
+		}
 	}
 	if (req.getMethod() == "DELETE")
 	{
