@@ -15,7 +15,7 @@
 #define EPOLL_TIMEOUT 1000
 #define BUFFER_SIZE 1000000
 #define CLIENT_TIMEOUT 12
-#define MAX_UPLOAD_SIZE 1000000
+//#define MAX_UPLOAD_SIZE 1000000
 #define CGI_TIMEOUT_SEC 10
 
 enum	e_cgi_status

@@ -42,9 +42,13 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 
 	if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	{
-		int contentLength = 0;
+		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
-		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > MAX_UPLOAD_SIZE)
+		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl; 
+		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl; 
+
+		uint maxBodySize = server.get_client_max_body_size();
+		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
 		{
 			// Test #3
 			customError = getCustomErrorPage(route, 413);
@@ -74,23 +78,30 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 	{
 		if (req.getPath() == "/")
 		{
-			filepath = route.get_root() + "/index.html";
-		}
-		else
-		{
-			filepath = route.get_root() + req.getPath();
-		}
+			std::vector<std::string> indices = route.get_index();
+			indices.push_back("index.html"); // Local fallback
 
-		if (!util::fileExists(filepath))
-		{
+			for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
+			{
+				filepath = route.get_root() + "/" + *it;
+				if (util::fileExists(filepath))
+				{
+					return _serveFile(filepath, 200, req); // Serve the first matching index file in the route root
+				}
+			}
+
+			// Global fallback
+			filepath = "./default_pages/index.html";
+			if (util::fileExists(filepath))
+			{
+				return _serveFile(filepath, 200, req);
+			}
 			// Test #7
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
 
-		return _serveFile(filepath, 200, req);
 	}
-
 	if (req.getMethod() == "DELETE")
 	{
 		if (util::fileExists(filepath))
