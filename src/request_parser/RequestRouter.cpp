@@ -177,48 +177,7 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
         statusLine += content;
     }
 
-    std::cout << "+++ Response: " << statusLine << std::endl;
-	// std::string content = "";
-
-	if (req.getMethod() != "DELETE")
-	{
-		std::ifstream file(filepath.c_str());
-		if (file.is_open())
-		{
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			file.close();
-			content = buffer.str();
-		}
-	}
-	// std::string statusLine;
-	switch (statusCode)
-	{
-	case 200:
-		statusLine = "HTTP/1.1 200 OK";
-		break;
-	case 404:
-		statusLine = "HTTP/1.1 404 Not Found";
-		break;
-	case 500:
-		statusLine = "HTTP/1.1 500 Internal Server Error";
-		break;
-	default:
-		statusLine = "HTTP/1.1 200 OK";
-	}
-	statusLine += "\r\nContent-Type: text/html";
-	statusLine += "\r\nContent-Length: ";
-	statusLine += util::to_string(content.size());
-	if (req.getKeepAlive())
-	{
-		statusLine += "\r\nConnection: keep-alive";
-	}
-	else
-	{
-		statusLine += "\r\nConnection: close";
-	}
-	statusLine += "\r\n\r\n";
-	statusLine += content;
+    //std::cout << "+++ Response: " << statusLine << std::endl;
 
     return statusLine;
 }
