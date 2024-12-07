@@ -59,6 +59,15 @@ void ServerManager::handleClientRequest(Client &client,
 	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
 	client.setRequest();
 	client.setServer(servers);
+	/*
+	if (client.getRequest().getPath().find("/src/cgi/print_env_body.py") != std::string::npos)
+	{
+		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
+		Cgi_Controller controller(client);
+		controller.start_cgi();
+		acceptNewConnection();
+	}*/
+
 	client.setResponse();
 	client.updateLastActivity();
 	std::cout << LIGTH BLUE << "+++++ [Request processed] : ClientFd " << client.getFd() << RESET << std::endl;

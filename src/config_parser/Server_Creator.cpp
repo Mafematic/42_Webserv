@@ -78,6 +78,7 @@ void Server_Creator::server_assign_root(Server &new_server,
 										Server_Parser &cur_parser)
 {
 	std::vector<std::string> config_defs = cur_parser.get_root_handler().get_config_defs();
+	
 	if (config_defs.size() > 0)
 		new_server.set_root(config_defs[0]);
 }

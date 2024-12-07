@@ -25,7 +25,14 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 {
 	std::string customError;
 	Route route = _getRoute(server, req);
-	std::string filepath = route.get_root() + req.getPath();
+	std::cout << "++++ Root1: " << route.get_root() << std::endl; 
+	std::cout << "++++ Root2: " << server.get_root() << std::endl; 
+
+	std::cout << "++++ Path1: " << req.getPath() << std::endl; 
+
+	std::string filepath = server.get_root() + req.getPath();
+	std::cout << "++++ filepath: " << filepath << std::endl; 
+
 	
 	// Test #1
 	if (!req.isValid()) // Early exit for invalid requests
@@ -42,9 +49,13 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 
 	if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	{
-		int contentLength = 0;
+		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
-		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > MAX_UPLOAD_SIZE)
+		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl; 
+		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl; 
+
+		uint maxBodySize = server.get_client_max_body_size();
+		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
 		{
 			// Test #3
 			customError = getCustomErrorPage(route, 413);
@@ -74,24 +85,41 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 	{
 		if (req.getPath() == "/")
 		{
-			filepath = route.get_root() + "/index.html";
-			if (!util::fileExists(filepath))
-			{
-				// Test #7
-				customError = getCustomErrorPage(route, 404);
-				return _serveFile(customError, 404, req);
-			}
-			return _serveFile(filepath, 200, req);
-		}
+			std::vector<std::string> indices = route.get_index();
+			indices.push_back("index.html"); // Local fallback
 
-		if (!util::fileExists(filepath))
-		{
+			for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
+			{
+				filepath = route.get_root() + "/" + *it;
+				if (util::fileExists(filepath))
+				{
+					return _serveFile(filepath, 200, req); // Serve the first matching index file in the route root
+				}
+			}
+
+			// Global fallback
+			filepath = "./default_pages/index.html";
+			if (util::fileExists(filepath))
+			{
+				return _serveFile(filepath, 200, req);
+			}
+			// Test #7
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
-		return _serveFile(filepath, 200, req);
+		else
+		{
+			// Handle other paths
+			//filepath = route.get_root() + req.getPath();
+			std::cout << "+++ filepath:" << std::endl;
+			if (util::fileExists(filepath))
+			{
+				return _serveFile(filepath, 200, req);
+			}
+			customError = getCustomErrorPage(route, 404);
+			return _serveFile(customError, 404, req);
+		}
 	}
-
 	if (req.getMethod() == "DELETE")
 	{
 		if (util::fileExists(filepath))
@@ -102,12 +130,14 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 			}
 			else
 			{
+				// Test #8
 				customError = getCustomErrorPage(route, 500);
 				return _serveFile(customError, 500, req);
 			}
 		}
 		else
 		{
+			// Test #9
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req); // File not found
    		}
@@ -199,3 +229,4 @@ Route RequestRouter::_getRoute(const Server &server, const Request &req)
 	// If no route matches, return a default route
 	return Route(); // A default constructor handles unmatched cases
 }
+
