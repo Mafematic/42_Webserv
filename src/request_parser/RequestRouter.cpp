@@ -178,7 +178,7 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
     }
 
     std::cout << "+++ Response: " << statusLine << std::endl;
-	std::string content = "";
+	// std::string content = "";
 
 	if (req.getMethod() != "DELETE")
 	{
@@ -191,7 +191,7 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
 			content = buffer.str();
 		}
 	}
-	std::string statusLine;
+	// std::string statusLine;
 	switch (statusCode)
 	{
 	case 200:
