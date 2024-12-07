@@ -68,7 +68,6 @@ void Route_Creator::route_assign_root(Route &new_route,
 	Location_Parser &cur_parser)
 {
 	std::vector<std::string> config_defs = cur_parser.get_root_handler().get_config_defs();
-	std::cout << "HERE\n\n" << std::endl;
 	std::cout << config_defs.size() << std::endl;
 	if (config_defs.size() > 0)
 	{

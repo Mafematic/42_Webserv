@@ -249,9 +249,10 @@ Server Client::getServer()
 
 void Client::setResponse()
 {
-	this->response = RequestRouter::route(req, server);
-	_responselength = response.length();
+    this->response = RequestRouter::route(req, server);
+    _responselength = response.length();
 }
+
 
 std::string Client::getResponse()
 {

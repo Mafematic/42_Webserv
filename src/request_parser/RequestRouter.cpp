@@ -24,15 +24,13 @@ std::string getCustomErrorPage(const Route &route, int statusCode)
 std::string RequestRouter::route(const Request &req, const Server &server)
 {
 	std::string customError;
-	Route route = _getRoute(server, req);
-	std::cout << "++++ Root1: " << route.get_root() << std::endl; 
-	std::cout << "++++ Root2: " << server.get_root() << std::endl; 
-
-	std::cout << "++++ Path1: " << req.getPath() << std::endl; 
-
-	std::string filepath = server.get_root() + req.getPath();
-	std::cout << "++++ filepath: " << filepath << std::endl; 
-
+	
+    Route route = _getRoute(server, req);
+	std::string rootPath = server.getFinalRoot(route);
+    std::string filepath = rootPath + req.getPath();
+    std::cout << "++++ rootPath: " << rootPath << std::endl;
+    std::cout << "++++ Path: " << req.getPath() << std::endl;
+    std::cout << "++++ Final Filepath: " << filepath << std::endl;
 	
 	// Test #1
 	if (!req.isValid()) // Early exit for invalid requests
@@ -40,12 +38,12 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 		customError = getCustomErrorPage(route, 400);
         return _serveFile(customError, 400, req);
 	}
-	// Test #2
-	if (!util::directoryExists(route.get_root()))
-	{
-		customError = getCustomErrorPage(route, 500);
-        return _serveFile(customError, 500, req); // Custom error page for invalid root
-	}
+	// // Test #2
+	// if (!util::directoryExists(rootPath))
+	// {
+	// 	customError = getCustomErrorPage(route, 500);
+    //     return _serveFile(customError, 500, req); // Custom error page for invalid root
+	// }
 
 	if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	{
@@ -87,35 +85,38 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 		{
 			std::vector<std::string> indices = route.get_index();
 			indices.push_back("index.html"); // Local fallback
-
 			for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
 			{
-				filepath = route.get_root() + "/" + *it;
-				if (util::fileExists(filepath))
+				std::string indexFilepath = rootPath + "/" + *it;
+				if (util::fileExists(indexFilepath))
 				{
-					return _serveFile(filepath, 200, req); // Serve the first matching index file in the route root
+					return _serveFile(indexFilepath, 200, req); // Serve the first matching index file in the route root
 				}
 			}
 
 			// Global fallback
-			filepath = "./default_pages/index.html";
-			if (util::fileExists(filepath))
+			std::string fallbackPath = "./default_pages/index.html";
+			if (util::fileExists(fallbackPath))
 			{
-				return _serveFile(filepath, 200, req);
+				return _serveFile(fallbackPath, 200, req);
 			}
-			// Test #7
+
+			// Test #7 - No index file found, return a 404 error
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
 		else
 		{
-			// Handle other paths
-			//filepath = route.get_root() + req.getPath();
-			std::cout << "+++ filepath:" << std::endl;
+			// Handle other paths using the previously constructed filepath
+			std::cout << "+++ filepath: " << filepath << std::endl;
+			std::cout << "+++ path: " << req.getPath() << std::endl;
+
 			if (util::fileExists(filepath))
 			{
 				return _serveFile(filepath, 200, req);
 			}
+
+			// File not found, return a 404 error
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
@@ -216,17 +217,33 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
 
 Route RequestRouter::_getRoute(const Server &server, const Request &req)
 {
-	std::vector<Route> routes = server.get_routes();
-	std::string path = req.getPath();
+    std::vector<Route> routes = server.get_routes();
+    std::string path = req.getPath();
 
-	for (size_t i = 0; i < routes.size(); i++)
-	{
-		if (path.find(routes[i].get_location()) == 0)
-		{
-			return routes[i];
-		}
-	}
-	// If no route matches, return a default route
-	return Route(); // A default constructor handles unmatched cases
+    // 1. Check for an exact match
+    for (size_t i = 0; i < routes.size(); i++)
+    {
+        if (path == routes[i].get_location())
+        {
+            return routes[i];
+        }
+    }
+    // 2. Check for the longest prefix match
+    Route *bestMatch = NULL;
+    for (size_t i = 0; i < routes.size(); i++)
+    {
+        if (path.find(routes[i].get_location()) == 0)
+        {
+            if (!bestMatch || routes[i].get_location().length() > bestMatch->get_location().length())
+            {
+                bestMatch = &routes[i];
+            }
+        }
+    }
+
+    if (bestMatch)
+    {
+        return *bestMatch;
+    }
+    return Route();
 }
-

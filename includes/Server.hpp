@@ -37,6 +37,8 @@ class Server
 	std::vector<Route> get_routes() const;
 	bool get_return_is_defined() const;
 	util::Return_Definition get_return() const;
+	std::string getFinalRoot(const Route &route) const;
+	
 
   private:
 	util::Address _listen;
