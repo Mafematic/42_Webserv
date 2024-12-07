@@ -1,7 +1,7 @@
 #include "Route.hpp"
 #include "external.hpp"
 
-Route::Route() : _location(""), _root("./"), _alias_is_defined(false),
+Route::Route() : _location(""), _root(""), _alias_is_defined(false),
 	_alias(""), _return_is_defined(false), _client_max_body_size(1024 * 1024),
 	_autoindex(false)
 {

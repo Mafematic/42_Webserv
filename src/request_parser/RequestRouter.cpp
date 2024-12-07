@@ -25,7 +25,14 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 {
 	std::string customError;
 	Route route = _getRoute(server, req);
-	std::string filepath = route.get_root() + req.getPath();
+	std::cout << "++++ Root1: " << route.get_root() << std::endl; 
+	std::cout << "++++ Root2: " << server.get_root() << std::endl; 
+
+	std::cout << "++++ Path1: " << req.getPath() << std::endl; 
+
+	std::string filepath = server.get_root() + req.getPath();
+	std::cout << "++++ filepath: " << filepath << std::endl; 
+
 	
 	// Test #1
 	if (!req.isValid()) // Early exit for invalid requests
@@ -103,7 +110,8 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 		else
 		{
 			// Handle other paths
-			filepath = route.get_root() + req.getPath();
+			//filepath = route.get_root() + req.getPath();
+			std::cout << "+++ filepath:" << std::endl;
 			if (util::fileExists(filepath))
 			{
 				return _serveFile(filepath, 200, req);
