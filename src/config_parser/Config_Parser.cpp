@@ -255,6 +255,7 @@ static std::vector<std::string> create_allowed_config_keys()
 	keys.push_back("{");
 	keys.push_back("}");
 	keys.push_back("return");
+	keys.push_back("cgi");
 	// keys.push_back("send_timeout");
 	// keys.push_back("CGI");
 	// keys.push_back("exec");

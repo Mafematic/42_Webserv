@@ -10,29 +10,17 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   LocationLocation_Parser.cpp                                 :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: smatthes <smatthes@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/11/02 13:47:54 by smatthes          #+#    #+#             */
-/*   Updated: 2024/11/02 13:56:13 by smatthes         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "Location_Parser.hpp"
 #include "webserv.hpp"
 
-Location_Parser::Location_Parser() : _location_block_str(""), _location("")
+Location_Parser::Location_Parser() : _location_block_str(""), _location(""), _is_cgi(false)
 {
 	this->assign_handlers();
 	return ;
 }
 
 Location_Parser::Location_Parser(std::string location_block_str) : _location_block_str(location_block_str),
-	_location("")
+	_location(""), _is_cgi(false)
 {
 	this->assign_handlers();
 	return ;
@@ -50,6 +38,8 @@ Location_Parser::Location_Parser(const Location_Parser &other)
 	this->_location_block_str = other._location_block_str;
 	this->_location = other._location;
 	this->_return_handler = other._return_handler;
+	this->_cgi_handler = other._cgi_handler;
+	this->_is_cgi = other._is_cgi;
 	this->assign_handlers();
 	return ;
 }
@@ -68,6 +58,8 @@ Location_Parser &Location_Parser::operator=(const Location_Parser &other)
 		this->_location_block_str = other._location_block_str;
 		this->_location = other._location;
 		this->_return_handler = other._return_handler;
+		this->_cgi_handler = other._cgi_handler;
+		this->_is_cgi = other._is_cgi;
 		this->assign_handlers();
 	}
 	return (*this);
@@ -88,6 +80,7 @@ void Location_Parser::assign_handlers()
 	this->keyword_handlers["allowed_methods"] = &Location_Parser::handle_allowed_methods;
 	this->keyword_handlers["autoindex"] = &Location_Parser::handle_autoindex;
 	this->keyword_handlers["return"] = &Location_Parser::handle_return ;
+	this->keyword_handlers["cgi"] = &Location_Parser::handle_cgi ;
 }
 
 void Location_Parser::set_location_block_str(std::string location_block_str)
@@ -162,6 +155,12 @@ void Location_Parser::handle_return(std::vector<std::string> &key_val)
 	this->_return_handler.check_and_add(key_val);
 }
 
+void Location_Parser::handle_cgi(std::vector<std::string> &key_val)
+{
+	this->_cgi_handler.check_and_add(key_val);
+	this->_is_cgi = true;
+}
+
 std::string Location_Parser::get_location(void)
 {
 	return (this->_location);
@@ -205,6 +204,11 @@ Directive_Allowed_Methods &Location_Parser::get_allowed_methods_handler()
 Directive_Return &Location_Parser::get_return_handler()
 {
 	return (this->_return_handler);
+}
+
+Directive_Cgi &Location_Parser::get_cgi_handler()
+{
+	return (this->_cgi_handler);
 }
 
 const char *Location_Parser::EmptyLocationDefinition::what() const throw()

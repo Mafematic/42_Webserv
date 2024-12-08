@@ -26,7 +26,7 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 	std::string customError;
 	
     Route route = _getRoute(server, req);
-	std::string rootPath = server.getFinalRoot(route);
+	std::string rootPath = server.get_final_root(route);
     std::string filepath = rootPath + req.getPath();
     std::cout << "++++ rootPath: " << rootPath << std::endl;
     std::cout << "++++ Path: " << req.getPath() << std::endl;

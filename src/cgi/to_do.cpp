@@ -38,3 +38,6 @@ SERVER_SOFTWARE -> socket_squad_404/1.0
 - child: to its thing
 - child: write response to pipe
 - parent read from pipe
+
+- run cgi in correct directory
+

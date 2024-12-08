@@ -37,4 +37,5 @@ class Route_Creator
 	void route_assign_error_pages(Route &new_route, Location_Parser &cur_parser);
 	void route_assign_index(Route &new_route, Location_Parser &cur_parser);
 	void route_assign_return(Route &new_server, Location_Parser &cur_parser);
+	void route_assign_cgi(Route &new_server, Location_Parser &cur_parser);
 };

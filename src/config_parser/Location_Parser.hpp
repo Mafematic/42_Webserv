@@ -19,6 +19,7 @@
 #include "Directive_Root.hpp"
 #include "Directive_Autoindex.hpp"
 #include "Directive_Return.hpp"
+#include "Directive_Cgi.hpp"
 #include "webserv.hpp"
 #include "util.hpp"
 
@@ -45,6 +46,7 @@ class Location_Parser
 	void handle_autoindex(std::vector<std::string> &key_val);
 	void handle_alias(std::vector<std::string> &key_val);
 	void handle_return(std::vector<std::string> &key_val);
+	void handle_cgi(std::vector<std::string> &key_val);
 
 	class EmptyLocationDefinition : public std::exception
 	{
@@ -76,7 +78,8 @@ class Location_Parser
 	Directive_Autoindex &get_autoindex_handler();
 	Directive_Allowed_Methods &get_allowed_methods_handler();
 	Directive_Return &get_return_handler();
-
+	Directive_Cgi &get_cgi_handler();
+	bool get_is_cgi();
 
   private:
 	Directive_Root _root_handler;
@@ -87,8 +90,10 @@ class Location_Parser
 	Directive_Allowed_Methods _allowed_methods_handler;
 	Directive_Autoindex _autoindex_handler;
 	Directive_Return _return_handler;
+	Directive_Cgi _cgi_handler;
 	std::string _location_block_str;
 	std::string _location;
+	bool _is_cgi;
 	std::map<std::string,
 				void (Location_Parser::*)(std::vector<std::string> &)>
 		keyword_handlers;

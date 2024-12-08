@@ -54,6 +54,7 @@ void Route_Creator::create_routes(Server &new_server, Server_Parser &cur_parser)
 		this->route_assign_index(new_route, *it);
 		this->route_assign_error_pages(new_route, *it);
 		this->route_assign_return(new_route, *it);
+		this->route_assign_cgi(new_route, *it);
 		new_server.add_route(new_route);
 	}
 }
@@ -163,4 +164,15 @@ void Route_Creator::route_assign_return(Route &new_route,
 	std::vector<util::Return_Definition> config_defs = cur_parser.get_return_handler().get_config_defs();
 	if (config_defs.size() > 0)
 		new_route.set_return(config_defs[0].status_code, config_defs[0].url);
+}
+
+
+void Route_Creator::route_assign_cgi(Route &new_route,
+	Location_Parser &cur_parser)
+{
+	std::map<std::string, std::string> config_defs = cur_parser.get_cgi_handler().get_config_defs();
+	for (std::map<std::string, std::string>::iterator it = config_defs.begin(); it != config_defs.end(); ++it)
+	{
+		new_route.set_cgi_interpreter(it->first, it->second);
+	}
 }

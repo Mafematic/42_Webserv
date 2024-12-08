@@ -4,6 +4,10 @@
 Cgi_Executor::Cgi_Executor(Cgi_Controller *val_corresponding_controller) : corresponding_controller(val_corresponding_controller),
 	env_arr(NULL), argv_arr(NULL), body("default empty")
 {
+	this->_corresponding_client = this->corresponding_controller->corresponding_client;
+	this->_corresponding_server = this->corresponding_controller->corresponding_client.getServer();
+	this->_corresponding_request = this->corresponding_controller->corresponding_client.getRequest();
+	// this->corresponding_route = this->corresponding_controller->corresponding_client.getServer();
 	return ;
 }
 
@@ -11,6 +15,10 @@ Cgi_Executor::Cgi_Executor(const Cgi_Executor &other)
 {
 	this->corresponding_controller = other.corresponding_controller;
 	this->env_map = other.env_map;
+	this->_corresponding_client = other._corresponding_client;
+	this->_corresponding_server = other._corresponding_server;
+	this->_corresponding_request = other._corresponding_request;
+	this->_corresponding_route = other._corresponding_route;
 	return ;
 }
 
@@ -20,6 +28,10 @@ Cgi_Executor &Cgi_Executor::operator=(const Cgi_Executor &other)
 	{
 		this->corresponding_controller = other.corresponding_controller;
 		this->env_map = other.env_map;
+		this->_corresponding_client = other._corresponding_client;
+		this->_corresponding_server = other._corresponding_server;
+		this->_corresponding_request = other._corresponding_request;
+		this->_corresponding_route = other._corresponding_route;
 	}
 	return (*this);
 }

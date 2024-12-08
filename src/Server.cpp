@@ -166,16 +166,11 @@ util::Return_Definition Server::get_return() const
 	return (this->_return);
 }
 
-std::string Server::getFinalRoot(const Route &route) const
+std::string Server::get_final_root(const Route &route) const
 {
 	if (!route.get_root().empty())
-	{
-		return route.get_root();
-	}
-	else
-	{
-		return get_root();
-	}
+		return (route.get_root());
+	return (this->get_root());
 }
 
 std::ostream &operator<<(std::ostream &os, Server const &server)

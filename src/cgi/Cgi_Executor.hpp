@@ -12,6 +12,10 @@
 
 #pragma once
 #include "webserv.hpp"
+#include "Client.hpp"
+#include "Server.hpp"
+#include "Request.hpp"
+#include "Route.hpp"
 
 class	Cgi_Controller;
 
@@ -31,11 +35,11 @@ class Cgi_Executor
 	void create_argv_arr();
 
 	Cgi_Controller *corresponding_controller;
+
 	std::map<std::string, std::string> env_map;
 	char **env_arr;
 	char **argv_arr;
 	std::string body;
-
 	// write http headers as env vars, not all, only selected
 
 	class CgiExecutorSystemFunctionFailed : public std::exception
@@ -51,4 +55,8 @@ class Cgi_Executor
 	};
 
   private:
+  	Client _corresponding_client;
+	Server _corresponding_server;
+	Request _corresponding_request;
+	Route _corresponding_route;
 };

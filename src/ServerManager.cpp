@@ -8,10 +8,10 @@ void ServerManager::setup(std::string config_path)
 	std::vector<Server> _server_config;
 	Config_Parser parser(config_path);
 	_server_config = parser.parse_config();
-	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
-	{
-		std::cout << *it;
-	}
+	// for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
+	// {
+	// 	std::cout << *it;
+	// }
 	std::cout << GREEN << "[Info]	Configuration file parsed" << RESET << std::endl;
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
@@ -42,7 +42,7 @@ void ServerManager::handleClientRequest(Client &client,
 {
 	int	status;
 
-	std::cout << LIGTH BLUE << "++++ [New request] : ClientFd " << client.getFd() << RESET << std::endl;
+	std::cout << LIGHT BLUE << "++++ [New request] : ClientFd " << client.getFd() << RESET << std::endl;
 	status = client.readRequest();
 	if (status == READ_ERROR)
 	{
@@ -56,7 +56,7 @@ void ServerManager::handleClientRequest(Client &client,
 	}
 	else if (status == READ_NOT_COMPLETE)
 		return ;
-	std::cout << LIGTH BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
+	std::cout << LIGHT BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
 	client.setRequest();
 	client.setServer(servers);
 	/*
@@ -70,7 +70,7 @@ void ServerManager::handleClientRequest(Client &client,
 
 	client.setResponse();
 	client.updateLastActivity();
-	std::cout << LIGTH BLUE << "+++++ [Request processed] : ClientFd " << client.getFd() << RESET << std::endl;
+	std::cout << LIGHT BLUE << "+++++ [Request processed] : ClientFd " << client.getFd() << RESET << std::endl;
 }
 
 void ServerManager::handleClientResponse(Client &client)
@@ -89,7 +89,7 @@ void ServerManager::handleClientResponse(Client &client)
 		return (closeConnection(client, "[Failed to send response]"));
 	else if (status == SEND_NOT_COMPLETE)
 		return ;
-	std::cout << LIGTH BLUE << "++++ [Response sent] : ClientFd " << client.getFd() << RESET << std::endl;
+	std::cout << LIGHT BLUE << "++++ [Response sent] : ClientFd " << client.getFd() << RESET << std::endl;
 	if (close == 1)
 		return (closeConnection(client, "[Header -> Connection: close]"));
 	client.clearRequest();

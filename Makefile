@@ -22,6 +22,7 @@ FILES_PARSER =	Config_Parser \
 				Directive_Listen \
 				Directive_Server_Name \
 				Directive_Return \
+				Directive_Cgi \
 				Server_Creator \
 				Route_Creator
 REQUEST_PARSER =	Request \

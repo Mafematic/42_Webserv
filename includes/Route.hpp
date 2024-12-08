@@ -34,9 +34,12 @@ class Route
 	std::map<std::string, bool> get_allowed_methods() const;
 	std::map<std::string, std::vector<std::string> > get_error_pages() const;
 	std::vector<std::string> get_index() const;
-
+	std::string get_cgi_interpreter(std::string extension) const;
+	std::map<std::string, std::string> get_cgi() const;
+	bool get_is_cgi() const;
 
 	void set_location(std::string new_val);
+	void set_cgi_interpreter(std::string extension, std::string path);
 	void set_root(std::string new_val);
 	void set_alias(std::string new_val);
 	void set_alias_is_defined(bool new_val);
@@ -61,6 +64,8 @@ class Route
 	uint _client_max_body_size;
 	bool _autoindex;
 	std::map<std::string, bool> _allowed_methods;
+	std::map<std::string, std::string> _cgi;
+	bool _is_cgi;
 	// search for index files at runtime, in case one is deleted
 	std::vector<std::string> _index;
 	// search for error pages at runtime, in case one is deleted
