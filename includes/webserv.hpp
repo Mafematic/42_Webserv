@@ -67,3 +67,5 @@ enum	State
 #include <numeric>
 #include <cstdlib>
 #include <sys/wait.h>
+#include <dirent.h>
+#include <cerrno>
