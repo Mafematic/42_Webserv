@@ -159,8 +159,6 @@ void Cgi_Executor::add_http_headers_to_env_map()
 	for (std::map<std::string,
 		std::string>::iterator it = headers.begin(); it != headers.end(); it++)
 	{
-		;
-		it->second;
 		if (std::find(headers_to_omit.begin(), headers_to_omit.end(),
 				it->first) == headers_to_omit.end())
 		{

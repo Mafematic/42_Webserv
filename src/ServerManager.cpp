@@ -63,7 +63,7 @@ void ServerManager::handleClientRequest(Client &client,
 	client.setRoute(client.getServer());
 	currentRoute = client.getRoute();
 	// for testing the cgi , exits the program>>>
-	// testCgi(client, currentRoute);
+	//testCgi(client, currentRoute);
 	// <<< for testing the cgi
 	client.setResponse();
 	client.updateLastActivity();

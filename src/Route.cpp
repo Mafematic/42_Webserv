@@ -11,7 +11,7 @@ Route::Route() : _location(""), _root(""), _alias_is_defined(false), _alias(""),
 	this->_cgi["py"] = "/usr/bin/python3";
 	this->_cgi["sh"] = "/usr/bin/bash";
 	this->_cgi["php"] = "/usr/bin/php-cgi";
-	this->_index.push_back("index.html");
+	//this->_index.push_back("index.html");
 	this->_error_pages["404"].push_back("404.html");
 	return ;
 }
