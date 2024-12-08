@@ -59,6 +59,9 @@ void ServerManager::handleClientRequest(Client &client,
 	std::cout << LIGHT BLUE << "++++ [Request read] : ClientFd " << client.getFd() << RESET << std::endl;
 	client.setRequest();
 	client.setServer(servers);
+	client.setRoute(client.getServer());
+	Route currentRoute = client.getRoute();
+	
 	/*
 	if (client.getRequest().getPath().find("/src/cgi/print_env_body.py") != std::string::npos)
 	{

@@ -259,6 +259,8 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
     }
 
     statusLine += "\r\nContent-Type: text/html";
+	//statusLine += "\r\nContent-Type: image/png";
+
     statusLine += "\r\nContent-Length: ";
     statusLine += util::to_string(content.size());
 
@@ -290,6 +292,10 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 
 Route RequestRouter::_getRoute(const Server &server, const Request &req)
 {
+
+	//"/test/hallo/"
+
+	//"./" "./root" "./test/"
     std::vector<Route> routes = server.get_routes();
     std::string path = req.getPath();
 
@@ -313,6 +319,7 @@ Route RequestRouter::_getRoute(const Server &server, const Request &req)
             }
         }
     }
+	//std::cout << "+++ Best Match:" << bestMatch << std::endl;
 
     if (bestMatch)
     {

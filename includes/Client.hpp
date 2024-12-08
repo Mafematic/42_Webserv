@@ -29,7 +29,7 @@ class Client
 
 		Server	server;
 		Request	req;
-		// Route & Route
+		Route route;
 		// check_header_received()
 
 		//struct sockaddr_in	client_addr;
@@ -74,6 +74,9 @@ class Client
 
 		int		getPort();
 		std::string	getIp();
+		void setRoute(const Server &server);
+		Route getRoute() const;
+
 };
 
 #endif

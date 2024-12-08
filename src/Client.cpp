@@ -1,4 +1,6 @@
 #include "Client.hpp"
+#include "RequestRouter.hpp"
+
 
 Client::Client(){}
 
@@ -278,4 +280,14 @@ int	Client::getPort()
 std::string	Client::getIp()
 {
 	return _client_ip;
+}
+
+void Client::setRoute(const Server &server)
+{
+	route = RequestRouter::_getRoute(server, req);
+}
+
+Route Client::getRoute() const
+{
+    return route;
 }
