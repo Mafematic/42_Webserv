@@ -134,6 +134,11 @@ std::string Request::getPath() const
     return _path;
 }
 
+void Request::setPath(const std::string &newPath)
+{
+    _path = newPath;
+}
+
 std::string Request::getVersion() const
 {
     return _version;

@@ -65,7 +65,7 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 	return html.str();
 }
 
-std::string RequestRouter::route(const Request &req, const Server &server)
+std::string RequestRouter::route(Request &req, const Server &server)
 {
 	std::string customError;
 	
@@ -77,6 +77,11 @@ std::string RequestRouter::route(const Request &req, const Server &server)
     std::cout << "++++ Final Filepath: " << filepath << std::endl;
     std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
     std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
+	if (util::directoryExists(filepath) && req.getPath()[req.getPath().length() - 1] != '/')
+    {
+        req.setPath(req.getPath() + "/");
+        filepath += "/";
+    }
 	
 	// Test #1
 	if (!req.isValid()) // Early exit for invalid requests
@@ -127,7 +132,7 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 
 	if (req.getMethod() == "GET")
 	{
-		if (req.getPath() == "/")
+		if (req.getPath() == "/" || req.getPath()[req.getPath().length() - 1] == '/')
 		{
 			// Serve the first matching index file
 			std::vector<std::string> indices = route.get_index();
@@ -135,19 +140,43 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 
 			for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
 			{
-				std::string indexFilepath = rootPath + "/" + *it;
+				std::string indexFilepath = filepath;
+				if (indexFilepath[indexFilepath.length() - 1] != '/')
+				{
+					indexFilepath += "/";
+				}
+				indexFilepath += *it;
+				std::cout << "++++ indexFilePath: " << indexFilepath << std::endl;
+
 				if (util::fileExists(indexFilepath))
 				{
 					return _serveFile(indexFilepath, 200, req);
 				}
 			}
 
-			// Global fallback to default index.html
+			// Check for autoindex
+			if (route.get_autoindex() && util::directoryExists(filepath))
+			{
+				std::cout << "+++ Autoindex condition met" << std::endl;
+				if (access(filepath.c_str(), R_OK) == 0)
+				{
+					std::string listing = generateAutoindexListing(filepath, req.getPath());
+					return _serveFile(listing, 200, req);
+				}
+				else
+				{
+					// Return a 403 Forbidden error if read permission is denied
+					customError = getCustomErrorPage(route, 403);
+					return _serveFile(customError, 403, req);
+				}
+			}
+
+			/*// Global fallback to default index.html
 			std::string fallbackPath = "./default_pages/index.html";
 			if (util::fileExists(fallbackPath))
 			{
 				return _serveFile(fallbackPath, 200, req);
-			}
+			}*/
 
 			// No index file found, return a 404 error
 			customError = getCustomErrorPage(route, 404);
@@ -159,25 +188,6 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 			if (util::fileExists(filepath))
 			{
 				return _serveFile(filepath, 200, req);
-			}
-
-			if (route.get_autoindex() && util::directoryExists(filepath))
-			{
-				// Check for read permission before generating autoindex
-				std::cout << "+++in here1" << std::endl; 
-				if (access(filepath.c_str(), R_OK) == 0)
-				{
-					std::string listing = generateAutoindexListing(filepath, req.getPath());
-					std::cout << "+++ Listing" << listing << std::endl; 
-
-        			return _serveFile(listing, 200, req);
-				}
-				else
-				{
-					// Return a 403 Forbidden error if read permission is denied
-					customError = getCustomErrorPage(route, 403);
-					return _serveFile(customError, 403, req);
-				}
 			}
 
 			// File or directory not found, return a 404 error
@@ -210,7 +220,7 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 	return _serveFile(customError, 404, req);
 }
 
-std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, const Request &req)
+std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, Request &req)
 {
     std::string content = "";
     if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
@@ -290,7 +300,7 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 
 
 
-Route RequestRouter::_getRoute(const Server &server, const Request &req)
+Route RequestRouter::_getRoute(const Server &server, Request &req)
 {
 
 	//"/test/hallo/"

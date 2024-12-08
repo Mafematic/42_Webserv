@@ -35,6 +35,7 @@ class Request
 		bool isValid() const;
 		std::string getMethod() const;
 		std::string getPath() const;
+		void setPath(const std::string &newPath);
 		std::string getVersion() const;
 		std::string getErrorMessage() const;
 		std::string getRawRequest() const;
