@@ -21,6 +21,50 @@ std::string getCustomErrorPage(const Route &route, int statusCode)
     return "./default_pages/" + code + ".html";
 }
 
+std::string generateAutoindexListing(const std::string &directoryPath, const std::string &requestPath)
+{
+	std::ostringstream html;
+
+	html << "<!DOCTYPE html><html><head><title>Index of " << requestPath << "</title></head><body>";
+	html << "<h1>Index of " << requestPath << "</h1><ul>";
+	
+	std::cout << "++++ Request path: " << requestPath << std::endl;
+	std::cout << "++++ Directory path: " << directoryPath << std::endl;
+
+	DIR *dir = opendir(directoryPath.c_str());
+	if (dir)
+	{
+		std::cout << "+++in here3" << std::endl; 
+		struct dirent *entry;
+		while ((entry = readdir(dir)) != NULL)
+		{
+			// Skip "." and ".."
+			if (std::string(entry->d_name) == "." || std::string(entry->d_name) == "..")
+				continue;
+
+			// Ensure no double slash in the URL
+			std::string linkPath = requestPath;
+			if (linkPath[linkPath.size() - 1] != '/')
+			{
+				linkPath += "/";
+			}
+			linkPath += entry->d_name;
+			std::cout << "++++ Linkpath: " << linkPath << std::endl;
+
+			html << "<li><a href=\"" << linkPath << "\">" << entry->d_name << "</a></li>";
+		}
+		closedir(dir);
+	}
+	else
+	{
+		html << "<p>Unable to open directory.</p>";
+		return html.str();  // Return in case of error
+	}
+
+	html << "</ul></body></html>";
+	return html.str();
+}
+
 std::string RequestRouter::route(const Request &req, const Server &server)
 {
 	std::string customError;
@@ -31,6 +75,8 @@ std::string RequestRouter::route(const Request &req, const Server &server)
     std::cout << "++++ rootPath: " << rootPath << std::endl;
     std::cout << "++++ Path: " << req.getPath() << std::endl;
     std::cout << "++++ Final Filepath: " << filepath << std::endl;
+    std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
+    std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
 	
 	// Test #1
 	if (!req.isValid()) // Early exit for invalid requests
@@ -83,40 +129,58 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 	{
 		if (req.getPath() == "/")
 		{
+			// Serve the first matching index file
 			std::vector<std::string> indices = route.get_index();
 			indices.push_back("index.html"); // Local fallback
+
 			for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
 			{
 				std::string indexFilepath = rootPath + "/" + *it;
 				if (util::fileExists(indexFilepath))
 				{
-					return _serveFile(indexFilepath, 200, req); // Serve the first matching index file in the route root
+					return _serveFile(indexFilepath, 200, req);
 				}
 			}
 
-			// Global fallback
+			// Global fallback to default index.html
 			std::string fallbackPath = "./default_pages/index.html";
 			if (util::fileExists(fallbackPath))
 			{
 				return _serveFile(fallbackPath, 200, req);
 			}
 
-			// Test #7 - No index file found, return a 404 error
+			// No index file found, return a 404 error
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
 		else
 		{
-			// Handle other paths using the previously constructed filepath
-			std::cout << "+++ filepath: " << filepath << std::endl;
-			std::cout << "+++ path: " << req.getPath() << std::endl;
-
+			// Handle other paths using the constructed filepath
 			if (util::fileExists(filepath))
 			{
 				return _serveFile(filepath, 200, req);
 			}
 
-			// File not found, return a 404 error
+			if (route.get_autoindex() && util::directoryExists(filepath))
+			{
+				// Check for read permission before generating autoindex
+				std::cout << "+++in here1" << std::endl; 
+				if (access(filepath.c_str(), R_OK) == 0)
+				{
+					std::string listing = generateAutoindexListing(filepath, req.getPath());
+					std::cout << "+++ Listing" << listing << std::endl; 
+
+        			return _serveFile(listing, 200, req);
+				}
+				else
+				{
+					// Return a 403 Forbidden error if read permission is denied
+					customError = getCustomErrorPage(route, 403);
+					return _serveFile(customError, 403, req);
+				}
+			}
+
+			// File or directory not found, return a 404 error
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req);
 		}
@@ -131,14 +195,12 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 			}
 			else
 			{
-				// Test #8
 				customError = getCustomErrorPage(route, 500);
 				return _serveFile(customError, 500, req);
 			}
 		}
 		else
 		{
-			// Test #9
 			customError = getCustomErrorPage(route, 404);
 			return _serveFile(customError, 404, req); // File not found
    		}
@@ -148,20 +210,28 @@ std::string RequestRouter::route(const Request &req, const Server &server)
 	return _serveFile(customError, 404, req);
 }
 
-std::string RequestRouter::_serveFile(const std::string &filepath, int statusCode, const Request &req)
+std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, const Request &req)
 {
     std::string content = "";
     if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
     {
-        std::ifstream file(filepath.c_str());
-        if (file.is_open())
+        if (util::fileExists(contentOrFilepath))
         {
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            file.close();
-            content = buffer.str();
+            std::ifstream file(contentOrFilepath.c_str());
+            if (file.is_open())
+            {
+                std::stringstream buffer;
+                buffer << file.rdbuf();
+                file.close();
+                content = buffer.str();
+            }
+        }
+        else
+        {
+            content = contentOrFilepath;  // Assume it's raw HTML content
         }
     }
+
 
     std::string statusLine;
     switch (statusCode)
@@ -172,6 +242,9 @@ std::string RequestRouter::_serveFile(const std::string &filepath, int statusCod
         case 303:
             statusLine = "HTTP/1.1 303 See Other";
             break;
+		case 403:
+        	statusLine = "HTTP/1.1 403 Forbidden";
+			break;
         case 404:
             statusLine = "HTTP/1.1 404 Not Found";
             break;
@@ -247,3 +320,4 @@ Route RequestRouter::_getRoute(const Server &server, const Request &req)
     }
     return Route();
 }
+
