@@ -91,6 +91,7 @@
             <button class="grid-item button" onclick="window.location.href='/delete.html'">DELETE a File</button>
             <button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button>
             <button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button>
+            <button class="bonus-button" onclick="testCGI();">TEST_CGI</button>
 
         </div>
     </div>
@@ -154,6 +155,31 @@
                 .then(response => response.text())
                 .then(data => document.getElementById('content').innerHTML = data)
                 .catch(err => console.error('Error:', err));
+        }
+
+        function testCGI() {
+            const url = "http://127.0.0.1:8004/cgi-bin/hello.py/test/hi?a=1&b=2";
+            const customBody = "This is a custom body content";
+
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain",
+                },
+                body: customBody
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text(); // Parse the response as plain text
+                })
+                .then(data => {
+                    console.log("Success:", data);
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
         }
 
     </script>

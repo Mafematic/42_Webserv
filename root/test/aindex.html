@@ -92,6 +92,7 @@
             <button class="grid-item button" onclick="window.location.href='/delete.html'">DELETE a File</button>
             <button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button>
             <button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button>
+            <button class="bonus-button" onclick="testCGI();">TEST_CGI</button>
 
         </div>
     </div>
@@ -156,7 +157,6 @@
                 .then(data => document.getElementById('content').innerHTML = data)
                 .catch(err => console.error('Error:', err));
         }
-
     </script>
 </body>
 

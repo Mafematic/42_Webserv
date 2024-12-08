@@ -27,6 +27,9 @@ std::string to_string(int value);
 bool ends_with(const std::string &str, const std::string &suffix);
 bool directoryExists(const std::string &path);
 bool fileExists(const std::string &path);
+std::string int_to_string(int number);
+void print_n_newlines(uint n);
+
 
 // template functions
 template <typename Container> void print_container(const Container &container,
@@ -71,6 +74,12 @@ struct	Address_Comparator
 	Address_Comparator(const Address &target_address);
 
 	bool operator()(const Address &addr) const;
+};
+
+struct ReplaceDash {
+    char operator()(char c) const {
+        return c == '-' ? '_' : c;
+    }
 };
 
 } // namespace util

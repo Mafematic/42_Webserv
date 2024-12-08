@@ -255,29 +255,48 @@ std::string to_string(int value)
 {
 	std::stringstream ss;
 	ss << value;
-	return ss.str();
+	return (ss.str());
 }
 
-bool ends_with(const std::string &str, const std::string &suffix)
+bool	ends_with(const std::string &str, const std::string &suffix)
 {
-	return str.size() >= suffix.size() &&
-		   str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+	return (str.size() >= suffix.size() && str.compare(str.size()
+			- suffix.size(), suffix.size(), suffix) == 0);
 }
 
-bool directoryExists(const std::string &path)
+bool	directoryExists(const std::string &path)
 {
-	struct stat info;
+	struct stat	info;
+
 	if (stat(path.c_str(), &info) != 0)
 	{
-		return false; // Path does not exist
+		return (false); // Path does not exist
 	}
-	return (info.st_mode & S_IFDIR) != 0;
+	return ((info.st_mode & S_IFDIR) != 0);
 }
 
-bool fileExists(const std::string &path)
+bool	fileExists(const std::string &path)
 {
-    struct stat buffer;
-    return (stat(path.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode));
+	struct stat	buffer;
+
+	return (stat(path.c_str(), &buffer) == 0 && S_ISREG(buffer.st_mode));
+}
+
+std::string int_to_string(int number)
+{
+	std::stringstream ss;
+	ss << number;
+	if (ss.fail())
+		throw std::runtime_error("Failed to convert integer to string");
+	return (ss.str());
+}
+
+void	print_n_newlines(uint n)
+{
+	for (uint i = 0; i < n; i++)
+	{
+		std::cout << std::endl;
+	}
 }
 
 } // namespace util

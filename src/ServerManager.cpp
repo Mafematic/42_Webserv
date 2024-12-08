@@ -40,7 +40,8 @@ void ServerManager::setup(std::string config_path)
 void ServerManager::handleClientRequest(Client &client,
 	std::vector<Server> servers)
 {
-	int	status;
+	int		status;
+	Route	currentRoute;
 
 	std::cout << LIGHT BLUE << "++++ [New request] : ClientFd " << client.getFd() << RESET << std::endl;
 	status = client.readRequest();
@@ -60,17 +61,10 @@ void ServerManager::handleClientRequest(Client &client,
 	client.setRequest();
 	client.setServer(servers);
 	client.setRoute(client.getServer());
-	Route currentRoute = client.getRoute();
-	
-	/*
-	if (client.getRequest().getPath().find("/src/cgi/print_env_body.py") != std::string::npos)
-	{
-		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
-		Cgi_Controller controller(client);
-		controller.start_cgi();
-		acceptNewConnection();
-	}*/
-
+	currentRoute = client.getRoute();
+	// for testing the cgi , exits the program>>>
+	// testCgi(client, currentRoute);
+	// <<< for testing the cgi
 	client.setResponse();
 	client.updateLastActivity();
 	std::cout << LIGHT BLUE << "+++++ [Request processed] : ClientFd " << client.getFd() << RESET << std::endl;
@@ -253,6 +247,44 @@ int ServerManager::epollAddSockets()
 	}
 	// std::cout << GREEN << "[Info]	All server sockets added to epoll" << RESET << std::endl;
 	return (1);
+}
+
+void ServerManager::testCgi(Client &client, Route &currentRoute)
+{
+	char	buffer[256];
+	ssize_t	bytesRead;
+
+	std::cout << std::endl << std::endl << std::endl;
+	std::cout << currentRoute.get_location();
+	std::cout << client.getRequest().getBody();
+	client.getRequest().print_header();
+	std::cout << std::endl << std::endl << std::endl;
+
+	if (currentRoute.get_location() == "/cgi-bin/")
+	{
+		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
+		Cgi_Controller controller(client);
+		controller.start_cgi();
+		while (controller.check_cgi() == CGI_RUNNING)
+		{
+			std::cout << "waiting for cgi" << std::endl;
+			sleep(1);
+		}
+		if (controller.check_cgi() == CGI_EXITED_NORMAL)
+			std::cout << "Exited Normally" << std::endl;
+		if (controller.check_cgi() == CGI_KILLED_TIMEOUT)
+			std::cout << "Exited Killed Timeout" << std::endl;
+		if (controller.check_cgi() == CGI_EXITED_ERROR)
+			std::cout << "Exited Error" << std::endl;
+		while ((bytesRead = read(controller.pipe_receive_cgi_answer[0], buffer,
+					sizeof(buffer) - 1)) > 0)
+		{
+			buffer[bytesRead] = '\0';
+			std::cout << buffer;
+			std::cout << "reading";
+		}
+		exit(1);
+	}
 }
 
 //-------------------------------------------------CONSTRUCTORS & DESTRUCTORS-------------------------------------------------//

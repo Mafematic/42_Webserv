@@ -2,12 +2,12 @@
 #include "Cgi_Executor.hpp"
 
 Cgi_Executor::Cgi_Executor(Cgi_Controller *val_corresponding_controller) : corresponding_controller(val_corresponding_controller),
-	env_arr(NULL), argv_arr(NULL), body("default empty")
+	env_arr(NULL), argv_arr(NULL), body("")
 {
 	this->_corresponding_client = this->corresponding_controller->corresponding_client;
 	this->_corresponding_server = this->corresponding_controller->corresponding_client.getServer();
 	this->_corresponding_request = this->corresponding_controller->corresponding_client.getRequest();
-	// this->corresponding_route = this->corresponding_controller->corresponding_client.getServer();
+	this->_corresponding_route = this->corresponding_controller->corresponding_client.getRoute();
 	return ;
 }
 
@@ -63,8 +63,9 @@ Cgi_Executor::~Cgi_Executor(void)
 
 void Cgi_Executor::start_cgi()
 {
-	this->body = "Hello, I am the hardcoded body \n\n\n";
+	this->body = this->_corresponding_request.getBody();
 	this->init_env_map();
+	this->add_http_headers_to_env_map();
 	this->env_map_to_env_arr();
 	this->create_argv_arr();
 	this->put_request_body_into_stdin();
@@ -72,6 +73,8 @@ void Cgi_Executor::start_cgi()
 			STDOUT_FILENO) < 0)
 		throw(CgiExecutorSystemFunctionFailed("dup2"));
 	if (close(this->corresponding_controller->pipe_receive_cgi_answer[1]) < 0)
+		throw(CgiExecutorSystemFunctionFailed("close"));
+	if (close(this->corresponding_controller->pipe_receive_cgi_answer[0]) < 0)
 		throw(CgiExecutorSystemFunctionFailed("close"));
 	this->run_script();
 }
@@ -96,26 +99,80 @@ void Cgi_Executor::put_request_body_into_stdin()
 
 void Cgi_Executor::init_env_map()
 {
-	std::ostringstream oss;
-	oss << this->body.size();
-	std::string content_length = oss.str();
-	std::cout << "content length is <" << content_length;
-	std::cout << std::endl << std::endl << std::flush;
-	this->env_map["CONTENT_LENGTH"] = content_length;
-	this->env_map["CONTENT_TYPE"] = "VAL_CONTENT_TYPE";
-	this->env_map["GATEWAY_INTERFACE"] = "VAL_GATEWAY_INTERFACE";
+	// std::ostringstream oss;
+	// oss << this->body.size();
+	// std::string content_length = oss.str();
+	// std::cout << "content length is <" << content_length;
+	// std::cout << std::endl << std::endl << std::flush;
+	if (this->body.length() > 0)
+		this->env_map["CONTENT_LENGTH"] = util::int_to_string(body.length());
+	std::string content_type = this->_corresponding_request.getHeader("Content-Type");
+	if (content_type.length() > 0)
+		this->env_map["CONTENT_TYPE"] = content_type;
+	this->env_map["GATEWAY_INTERFACE"] = "CGI/1.1";
+	// handle path info
+	// Route route = _getRoute(server, req);
+	//     std::string rootPath = server.getFinalRoot(route);
+	//     std::string filepath = rootPath + req.getPath();
+	//     std::cout << "++++ rootPath: " << rootPath << std::endl;
+	//     std::cout << "++++ Path: " << req.getPath() << std::endl;
+	//     std::cout << "++++ Final Filepath: " << filepath << std::endl;
+	// ++++ rootPath: ./root
+	// ++++ Path: /cgi-bin/something.sth.py
+	// ++++ Final Filepath: ./root/cgi-bin/something.sth.py
 	this->env_map["PATH_INFO"] = "VAL_PATH_INFO";
 	this->env_map["PATH_TRANSLATED"] = "VAL_PATH_TRANSLATED";
 	this->env_map["QUERY_STRING"] = "VAL_QUERY_STRING";
-	this->env_map["REMOTE_ADDR"] = "VAL_REMOTE_ADDR";
-	this->env_map["REMOTE_HOST"] = "VAL_REMOTE_HOST";
-	this->env_map["REQUEST_METHOD"] = "VAL_REQUEST_METHOD";
+	//
+	this->env_map["REMOTE_ADDR"] = this->_corresponding_client.getIp();
+	this->env_map["REMOTE_HOST"] = this->_corresponding_client.getIp();
+	this->env_map["REQUEST_METHOD"] = this->_corresponding_request.getMethod();
+	// here check again
 	this->env_map["SCRIPT_NAME"] = "VAL_SCRIPT_NAME";
-	this->env_map["SERVER_NAME"] = "VAL_SERVER_NAME";
-	this->env_map["SERVER_PORT"] = "VAL_SERVER_PORT";
-	this->env_map["SERVER_PROTOCOL"] = "VAL_SERVER_PROTOCOL";
-	this->env_map["SERVER_SOFTWARE"] = "VAL_SERVER_SOFTWARE";
-	// add selected http headers to env map
+	std::vector<std::string> server_names = this->_corresponding_server.get_server_name();
+	if (server_names.size() > 0)
+		this->env_map["SERVER_NAME"] = server_names[0];
+	else
+		this->env_map["SERVER_NAME"] = this->_corresponding_server.get_ip();
+	this->env_map["SERVER_PORT"] = util::int_to_string(this->_corresponding_server.get_port());
+	this->env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
+	this->env_map["SERVER_SOFTWARE"] = "socket_squad_404/1.0";
+	util::print_n_newlines(3);
+	std::cout << "HERE!";
+	util::print_n_newlines(1);
+	std::cout << this->_corresponding_request.getPath();
+	util::print_n_newlines(1);
+	std::cout << this->_corresponding_server.get_final_root(this->_corresponding_route);
+	util::print_n_newlines(1);
+	util::print_n_newlines(3);
+}
+
+void Cgi_Executor::add_http_headers_to_env_map()
+{
+	std::vector<std::string> headers_to_omit;
+	headers_to_omit.push_back("Authorization");
+	headers_to_omit.push_back("Connection");
+	headers_to_omit.push_back("Content-Length");
+	headers_to_omit.push_back("Content-Type");
+	std::map<std::string,
+		std::string> headers = this->_corresponding_request.getHeaderMap();
+	for (std::map<std::string,
+		std::string>::iterator it = headers.begin(); it != headers.end(); it++)
+	{
+		;
+		it->second;
+		if (std::find(headers_to_omit.begin(), headers_to_omit.end(),
+				it->first) == headers_to_omit.end())
+		{
+			std::string transformed = it->first;
+			std::transform(transformed.begin(), transformed.end(),
+				transformed.begin(), static_cast<int (*)(int)>(std::toupper));
+			std::transform(transformed.begin(), transformed.end(),
+				transformed.begin(), util::ReplaceDash());
+			transformed.insert(0, "HTTP_");
+			this->env_map[transformed] = it->second;
+		}
+	}
 }
 
 void Cgi_Executor::env_map_to_env_arr()

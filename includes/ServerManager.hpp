@@ -23,6 +23,8 @@ class ServerManager
 		Server	getServer(std::vector<Server> servers, Request req);
 		void	closeConnection(Client &client, std::string reason);
 
+		void testCgi(Client &client, Route &route);
+
 	private:
 		std::vector<Serverhandler>	serverhandler;
 		std::map<int, Client>		_clients;

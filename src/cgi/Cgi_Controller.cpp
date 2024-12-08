@@ -66,7 +66,11 @@ void Cgi_Controller::start_cgi()
 		Cgi_Executor executor(this);
 		executor.start_cgi();
 	}
-	// else if (this->executor_pid_id > 0)
+	else if (this->executor_pid_id > 0)
+	{
+		if (close(this->pipe_receive_cgi_answer[1]) < 0)
+			throw(CgiControllerSystemFunctionFailed("close"));
+	}
 	// {
 	// 	// this is only for testing purposes
 	// 	// >>

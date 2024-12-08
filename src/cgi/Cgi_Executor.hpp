@@ -29,6 +29,7 @@ class Cgi_Executor
 
 	void start_cgi();
 	void init_env_map();
+	void add_http_headers_to_env_map();
 	void put_request_body_into_stdin();
 	void run_script();
 	void env_map_to_env_arr();

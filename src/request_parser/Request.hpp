@@ -40,11 +40,14 @@ class Request
 		std::string getErrorMessage() const;
 		std::string getRawRequest() const;
 		std::string getHeader(const std::string &key) const;
+		std::map<std::string, std::string> getHeaderMap() const;
 
 		std::string getContentDisposition() const;
     	std::string getContentType() const;
 
 		std::string getBody() const;
+
+		void print_header() const;
 
 		void setKeepAlive(bool keepAlive);
     	bool getKeepAlive() const;
