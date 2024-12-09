@@ -7,30 +7,34 @@
 #include <fstream>     // For std::ifstream
 #include <string>
 
-std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode)
+std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
 {
-    std::map<std::string, std::vector<std::string> > errorPages = route.get_error_pages();
-    std::string code = util::to_string(statusCode);
+	std::string code = util::to_string(statusCode);
 
-    // 1. Check for location-specific error page
-    if (errorPages.count(code))
-    {
-        std::string errorPagePath = route.get_location() + errorPages[code][0];
-        if (util::fileExists(rootPath + errorPagePath))
-        {
-            return rootPath + errorPagePath;
-        }
-    }
+	// 1. Check for location-specific error page
+	std::map<std::string, std::vector<std::string> > routeErrorPages = route.get_error_pages();
+	if (routeErrorPages.count(code))
+	{
+		std::string errorPagePath = route.get_location() + routeErrorPages[code][0];
+		if (util::fileExists(rootPath + errorPagePath))
+		{
+			return rootPath + errorPagePath;
+		}
+	}
 
-    // 2. Check for server-level error page
-    std::string serverErrorPage = "/404.html";  // Assuming server-level error page is defined as /404.html
-    if (util::fileExists(rootPath + serverErrorPage))
-    {
-        return rootPath + serverErrorPage;
-    }
+	// 2. Check for server-level error page
+	std::map<std::string, std::vector<std::string> > serverErrorPages = server.get_error_pages();
+	if (serverErrorPages.count(code))
+	{
+		std::string errorPagePath = serverErrorPages[code][0];
+		if (util::fileExists(rootPath + errorPagePath))
+		{
+			return rootPath + errorPagePath;
+		}
+	}
 
-    // 3. Fallback to default error page
-    return "./default_pages/" + code + ".html";
+	// 3. Fallback to default error page
+	return "./default_pages/" + code + ".html";
 }
 
 
@@ -115,7 +119,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
     // Test #1
 	if (!req.isValid()) // Early exit for invalid requests
 	{
-		customError = getCustomErrorPage(rootPath, route, 400);
+		customError = getCustomErrorPage(rootPath, route, 400, server);
         return _serveFile(customError, 400, req);
 	}
 	// // Test #2
@@ -136,7 +140,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
 		{
 			// Test #3
-			customError = getCustomErrorPage(rootPath, route, 413);
+			customError = getCustomErrorPage(rootPath, route, 413, server);
         	return _serveFile(customError, 413, req); // Payload too large
 		}
 
@@ -144,18 +148,18 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (uploader.isMalformed())
 		{
 			// Test #4
-			customError = getCustomErrorPage(rootPath, route, 400);
+			customError = getCustomErrorPage(rootPath, route, 400, server);
         	return _serveFile(customError, 400, req); // Malformed request
 		}
 
 		if (uploader.handleRequest())
 		{
 			// Test #5 - NO ERROR Code
-			std::string redirectPage = getCustomErrorPage(rootPath, route, 303);
+			std::string redirectPage = getCustomErrorPage(rootPath, route, 303, server);
     		return _serveFile(redirectPage, 303, req);
 		}
 		// Test #6 
-		customError = getCustomErrorPage(rootPath, route, 500);
+		customError = getCustomErrorPage(rootPath, route, 500, server);
         return _serveFile(customError, 500, req); // Internal server error
 	}
 
@@ -163,7 +167,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		if (req.getPath() == "/" || req.getPath()[req.getPath().length() - 1] == '/')
 		{
-			// Serve the first matching index file
 			std::vector<std::string> indices = route.get_index();
 			if (!indices.empty())
 			{
@@ -184,16 +187,8 @@ std::string RequestRouter::route(Request &req, const Server &server)
 					}
 				}
 			}
-			// If no indices are defined and autoindex is off, return 404
-			if (!route.get_autoindex())
-			{
-				std::cout << "++ HERE2" << std::endl;
-				std::cout << "++ Location" << route.get_location() << std::endl;
-				customError = getCustomErrorPage(rootPath, route, 404);
-				return _serveFile(customError, 404, req);
-			}
 
-			// Check for autoindex if enabled
+			// If autoindex is enabled in the route, generate directory listing
 			if (route.get_autoindex() && util::directoryExists(filepath))
 			{
 				if (access(filepath.c_str(), R_OK) == 0)
@@ -203,14 +198,33 @@ std::string RequestRouter::route(Request &req, const Server &server)
 				}
 				else
 				{
-					customError = getCustomErrorPage(rootPath, route, 403);
+					customError = getCustomErrorPage(rootPath, route, 403, server);
 					return _serveFile(customError, 403, req);
 				}
 			}
 
+			// If no location-specific index files and autoindex is off, fall back to server-level index files
+			indices = server.get_index();
+			if (!indices.empty())
+			{
+				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
+				{
+					std::string indexFilepath = filepath;
+					if (indexFilepath[indexFilepath.length() - 1] != '/')
+					{
+						indexFilepath += "/";
+					}
+					indexFilepath += *it;
+
+					if (util::fileExists(indexFilepath))
+					{
+						return _serveFile(indexFilepath, 200, req);
+					}
+				}
+			}
+
 			// No index found, return a 404 error
-			std::cout << "++ HERE3" << std::endl;
-			customError = getCustomErrorPage(rootPath, route, 404);
+			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
 		else
@@ -222,7 +236,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			}
 
 			// File or directory not found, return a 404 error
-			customError = getCustomErrorPage(rootPath, route, 404);
+			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
 	}
@@ -236,18 +250,18 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			}
 			else
 			{
-				customError = getCustomErrorPage(rootPath, route, 500);
+				customError = getCustomErrorPage(rootPath, route, 500, server);
 				return _serveFile(customError, 500, req);
 			}
 		}
 		else
 		{
-			customError = getCustomErrorPage(rootPath, route, 404);
+			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req); // File not found
    		}
 	}
 
-	customError = getCustomErrorPage(rootPath, route, 404);
+	customError = getCustomErrorPage(rootPath, route, 404, server);
 	return _serveFile(customError, 404, req);
 }
 
