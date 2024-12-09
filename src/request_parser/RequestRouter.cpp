@@ -90,29 +90,31 @@ std::string RequestRouter::route(Request &req, const Server &server)
     Route route = _getRoute(server, req);
     std::string rootPath = server.get_final_root(route);
 
-    // Ensure no double slashes by removing the leading slash from req.getPath()
-    std::string path = req.getPath();
-    if (!path.empty() && path[0] == '/')
-    {
-        path = path.substr(1);
-    }
+	std::string path = req.getPath();
+	if (route.get_alias_is_defined())
+	{
+		std::string location = route.get_location();
+		if (path.find(location) == 0)
+		{
+			path.replace(0, location.length(), "");
+			if (!path.empty() && path[0] == '/')
+			{
+				path = path.substr(1);
+			}
+		}
+	}
 
-    std::string filepath = rootPath;
-    if (filepath[filepath.length() - 1] != '/')
-    {
-        filepath += "/";
-    }
-    filepath += path;
+	// Construct the final filepath
+	std::string filepath = rootPath;
+	if (filepath[filepath.length() - 1] != '/')
+	{
+		filepath += "/";
+	}
+	filepath += path;
 
-    // If the path does not end with a '/', append it to req's path
-    if (req.getPath()[req.getPath().length() - 1] != '/')
-    {
-        req.setPath(req.getPath() + "/");
-    }
-
-    std::cout << "++++ rootPath: " << rootPath << std::endl;
-    std::cout << "++++ Path: " << req.getPath() << std::endl;
-    std::cout << "++++ Final Filepath: " << filepath << std::endl;
+	std::cout << "++++ rootPath: " << rootPath << std::endl;
+	std::cout << "++++ Path: " << req.getPath() << std::endl;
+	std::cout << "++++ Final Filepath: " << filepath << std::endl;
     std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
     std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
 

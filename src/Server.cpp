@@ -168,8 +168,14 @@ util::Return_Definition Server::get_return() const
 
 std::string Server::get_final_root(const Route &route) const
 {
+	if (route.get_alias_is_defined())
+	{
+		return route.get_alias();
+	}
 	if (!route.get_root().empty())
-		return (route.get_root());
+	{
+		return route.get_root();
+	}
 	return (this->get_root());
 }
 
