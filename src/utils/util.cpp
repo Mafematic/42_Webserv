@@ -295,8 +295,17 @@ void	print_n_newlines(uint n)
 {
 	for (uint i = 0; i < n; i++)
 	{
-		std::cout << std::endl;
+		std::cerr << std::endl;
 	}
+	std::cerr << std::flush;
+}
+
+void replace_all(std::string &str, std::string search_for, std::string replace_with) {
+    std::string::size_type pos = 0;
+
+    while ((pos = str.find(search_for, pos)) != std::string::npos) {
+        str.replace(pos, search_for.length(), replace_with);
+    }
 }
 
 } // namespace util

@@ -19,6 +19,7 @@ Cgi_Executor::Cgi_Executor(const Cgi_Executor &other)
 	this->_corresponding_server = other._corresponding_server;
 	this->_corresponding_request = other._corresponding_request;
 	this->_corresponding_route = other._corresponding_route;
+	this->_path_analyser = other._path_analyser;
 	return ;
 }
 
@@ -32,6 +33,7 @@ Cgi_Executor &Cgi_Executor::operator=(const Cgi_Executor &other)
 		this->_corresponding_server = other._corresponding_server;
 		this->_corresponding_request = other._corresponding_request;
 		this->_corresponding_route = other._corresponding_route;
+		this->_path_analyser = other._path_analyser;
 	}
 	return (*this);
 }
@@ -64,6 +66,7 @@ Cgi_Executor::~Cgi_Executor(void)
 void Cgi_Executor::start_cgi()
 {
 	this->body = this->_corresponding_request.getBody();
+	this->analyse_path();
 	this->init_env_map();
 	this->add_http_headers_to_env_map();
 	this->env_map_to_env_arr();
@@ -99,36 +102,25 @@ void Cgi_Executor::put_request_body_into_stdin()
 
 void Cgi_Executor::init_env_map()
 {
-	// std::ostringstream oss;
-	// oss << this->body.size();
-	// std::string content_length = oss.str();
-	// std::cout << "content length is <" << content_length;
-	// std::cout << std::endl << std::endl << std::flush;
+
+	// required for php-cgi >>>
+	this->env_map["REDIRECT_STATUS"] = "200";
+	this->env_map["SCRIPT_FILENAME"] = this->_path_analyser.path_translated;
+	// <<<< required for php-cgi
 	if (this->body.length() > 0)
 		this->env_map["CONTENT_LENGTH"] = util::int_to_string(body.length());
 	std::string content_type = this->_corresponding_request.getHeader("Content-Type");
 	if (content_type.length() > 0)
 		this->env_map["CONTENT_TYPE"] = content_type;
 	this->env_map["GATEWAY_INTERFACE"] = "CGI/1.1";
-	// handle path info
-	// Route route = _getRoute(server, req);
-	//     std::string rootPath = server.getFinalRoot(route);
-	//     std::string filepath = rootPath + req.getPath();
-	//     std::cout << "++++ rootPath: " << rootPath << std::endl;
-	//     std::cout << "++++ Path: " << req.getPath() << std::endl;
-	//     std::cout << "++++ Final Filepath: " << filepath << std::endl;
-	// ++++ rootPath: ./root
-	// ++++ Path: /cgi-bin/something.sth.py
-	// ++++ Final Filepath: ./root/cgi-bin/something.sth.py
-	this->env_map["PATH_INFO"] = "VAL_PATH_INFO";
-	this->env_map["PATH_TRANSLATED"] = "VAL_PATH_TRANSLATED";
-	this->env_map["QUERY_STRING"] = "VAL_QUERY_STRING";
-	//
+	this->env_map["PATH_INFO"] = this->_path_analyser.path_info;
+	this->env_map["PATH_TRANSLATED"] = this->_path_analyser.path_translated;
+	this->env_map["QUERY_STRING"] = this->_path_analyser.query_string;
 	this->env_map["REMOTE_ADDR"] = this->_corresponding_client.getIp();
 	this->env_map["REMOTE_HOST"] = this->_corresponding_client.getIp();
 	this->env_map["REQUEST_METHOD"] = this->_corresponding_request.getMethod();
 	// here check again
-	this->env_map["SCRIPT_NAME"] = "VAL_SCRIPT_NAME";
+	this->env_map["SCRIPT_NAME"] = this->_path_analyser.script_path;
 	std::vector<std::string> server_names = this->_corresponding_server.get_server_name();
 	if (server_names.size() > 0)
 		this->env_map["SERVER_NAME"] = server_names[0];
@@ -137,14 +129,14 @@ void Cgi_Executor::init_env_map()
 	this->env_map["SERVER_PORT"] = util::int_to_string(this->_corresponding_server.get_port());
 	this->env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->env_map["SERVER_SOFTWARE"] = "socket_squad_404/1.0";
-	util::print_n_newlines(3);
-	std::cout << "HERE!";
-	util::print_n_newlines(1);
-	std::cout << this->_corresponding_request.getPath();
-	util::print_n_newlines(1);
-	std::cout << this->_corresponding_server.get_final_root(this->_corresponding_route);
-	util::print_n_newlines(1);
-	util::print_n_newlines(3);
+	std::cerr << this->_corresponding_server.get_final_root(this->_corresponding_route);
+}
+
+void Cgi_Executor::analyse_path()
+{
+	std::string full_request_path = this->_corresponding_request.getPath();
+	std::string final_root = this->_corresponding_server.get_final_root(this->_corresponding_route);
+	this->_path_analyser.analyse(full_request_path, final_root);
 }
 
 void Cgi_Executor::add_http_headers_to_env_map()
@@ -197,8 +189,12 @@ void Cgi_Executor::env_map_to_env_arr()
 
 void Cgi_Executor::create_argv_arr()
 {
-	std::string arg_0 = "/usr/bin/python3";
-	std::string arg_1 = "src/cgi/print_env_body.py";
+	std::string arg_0 = this->_corresponding_route.get_cgi_interpreter(this->_path_analyser.script_extension);
+	if(arg_0.length() == 0)
+		arg_0 = this->_corresponding_route.get_cgi_interpreter("sh");
+	// std::string arg_0 = "/usr/bin/bash";
+	// std::string arg_1 = "src/cgi/print_env_body.php";
+	std::string arg_1 = this->_path_analyser.path_translated;
 	this->argv_arr = new char *[3];
 	this->argv_arr[0] = NULL;
 	this->argv_arr[1] = NULL;
@@ -217,6 +213,11 @@ void Cgi_Executor::create_argv_arr()
 
 void Cgi_Executor::run_script()
 {
+	util::print_n_newlines(3);
+	std::cerr << this->argv_arr[0] << std::endl;
+	std::cerr << this->argv_arr[1] << std::endl;
+	util::print_n_newlines(3);
+	std::cout << std::flush;
 	execve(this->argv_arr[0], this->argv_arr, this->env_arr);
 	throw(CgiExecutorSystemFunctionFailed("execve"));
 }

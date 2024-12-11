@@ -78,7 +78,6 @@
             background-color: rgb(90, 22, 133);
             /* Optional: Change color on hover */
         }
-
     </style>
 </head>
 
@@ -86,12 +85,13 @@
     <div class="centered">
         <div class="grid-container">
             <button class="grid-item button" onclick="window.location.href='/about.html'">Simple GET Request</button>
-            <button class="grid-item button" onclick="window.location.href='form.html'">Check POST Method with Form</button>
+            <button class="grid-item button" onclick="window.location.href='form.html'">Check POST Method with
+                Form</button>
             <button class="grid-item button" onclick="window.location.href='upload.html'">Upload File with POST</button>
             <button class="grid-item button" onclick="window.location.href='/delete.html'">DELETE a File</button>
             <button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button>
             <button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button>
-            <button class="bonus-button" onclick="testCGI();">TEST_CGI</button>
+            <button class="bonus-button" onclick="cgiPost();">cgiPost</button>
 
         </div>
     </div>
@@ -157,9 +157,10 @@
                 .catch(err => console.error('Error:', err));
         }
 
-        function testCGI() {
+        function cgiPost() {
             const url = "http://127.0.0.1:8004/cgi-bin/hello.py/test/hi?a=1&b=2";
             const customBody = "This is a custom body content";
+            console.log("HI THERE!");
 
             fetch(url, {
                 method: "POST",
@@ -169,16 +170,24 @@
                 body: customBody
             })
                 .then(response => {
+                    console.log(response);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.text(); // Parse the response as plain text
                 })
-                .then(data => {
-                    console.log("Success:", data);
+                .then(htmlContent => {
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                        newWindow.document.open();
+                        newWindow.document.write(htmlContent);
+                        newWindow.document.close();
+                    } else {
+                        console.error('Failed to open new window.');
+                    }
                 })
                 .catch(error => {
-                    console.error("Error:", error);
+                    console.error('Error fetching the page:', error);
                 });
         }
 

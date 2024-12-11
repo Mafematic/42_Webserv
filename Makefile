@@ -28,7 +28,7 @@ FILES_PARSER =	Config_Parser \
 REQUEST_PARSER =	Request \
 					RequestRouter \
 					Uploader
-CGI = Cgi_Controller Cgi_Executor
+CGI = Cgi_Controller Cgi_Executor Path_Analyser
 
 SRC	= $(FILES:=.cpp) $(FILES_PARSER:=.cpp) $(REQUEST_PARSER:=.cpp) $(CGI:=.cpp)
 

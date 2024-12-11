@@ -11,11 +11,12 @@
 /* ************************************************************************** */
 
 #pragma once
-#include "webserv.hpp"
 #include "Client.hpp"
-#include "Server.hpp"
 #include "Request.hpp"
 #include "Route.hpp"
+#include "Server.hpp"
+#include "webserv.hpp"
+#include "Path_Analyser.hpp"
 
 class	Cgi_Controller;
 
@@ -34,6 +35,7 @@ class Cgi_Executor
 	void run_script();
 	void env_map_to_env_arr();
 	void create_argv_arr();
+	void analyse_path();
 
 	Cgi_Controller *corresponding_controller;
 
@@ -56,8 +58,9 @@ class Cgi_Executor
 	};
 
   private:
-  	Client _corresponding_client;
+	Client _corresponding_client;
 	Server _corresponding_server;
 	Request _corresponding_request;
 	Route _corresponding_route;
+	Path_Analyser _path_analyser;
 };

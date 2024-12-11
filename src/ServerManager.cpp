@@ -63,7 +63,7 @@ void ServerManager::handleClientRequest(Client &client,
 	client.setRoute(client.getServer());
 	currentRoute = client.getRoute();
 	// for testing the cgi , exits the program>>>
-	//testCgi(client, currentRoute);
+	testCgi(client, currentRoute);
 	// <<< for testing the cgi
 	client.setResponse();
 	client.updateLastActivity();
@@ -251,7 +251,7 @@ int ServerManager::epollAddSockets()
 
 void ServerManager::testCgi(Client &client, Route &currentRoute)
 {
-	char	buffer[256];
+	char	buffer[1000];
 	ssize_t	bytesRead;
 
 	std::cout << std::endl << std::endl << std::endl;
@@ -259,7 +259,6 @@ void ServerManager::testCgi(Client &client, Route &currentRoute)
 	std::cout << client.getRequest().getBody();
 	client.getRequest().print_header();
 	std::cout << std::endl << std::endl << std::endl;
-
 	if (currentRoute.get_location() == "/cgi-bin/")
 	{
 		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
@@ -277,11 +276,11 @@ void ServerManager::testCgi(Client &client, Route &currentRoute)
 		if (controller.check_cgi() == CGI_EXITED_ERROR)
 			std::cout << "Exited Error" << std::endl;
 		while ((bytesRead = read(controller.pipe_receive_cgi_answer[0], buffer,
-					sizeof(buffer) - 1)) > 0)
+					1000 - 1)) > 0)
 		{
 			buffer[bytesRead] = '\0';
+			write(client.getFd(), buffer, bytesRead);
 			std::cout << buffer;
-			std::cout << "reading";
 		}
 		exit(1);
 	}

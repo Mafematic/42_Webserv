@@ -8,8 +8,10 @@ std::string &ltrim(std::string &str);
 std::string &rtrim(std::string &str);
 std::string &trim(std::string &str);
 std::vector<std::string> split(const std::string &str, char delimiter);
-std::vector<std::string> split(const std::string &str, char delimiter, size_t maxTokens);
-std::vector<std::string> split(const std::string &str, char delimiter, size_t maxTokens, size_t start_index);
+std::vector<std::string> split(const std::string &str, char delimiter,
+	size_t maxTokens);
+std::vector<std::string> split(const std::string &str, char delimiter,
+	size_t maxTokens, size_t start_index);
 
 std::string join_lines(const std::vector<std::string> &lines);
 int		find_first_opening_bracket_only_ws(const std::string &str,
@@ -24,12 +26,13 @@ std::map<std::string, std::string> get_color_map();
 int		is_valid_http_code(std::string err_code);
 
 std::string to_string(int value);
-bool ends_with(const std::string &str, const std::string &suffix);
-bool directoryExists(const std::string &path);
-bool fileExists(const std::string &path);
+bool	ends_with(const std::string &str, const std::string &suffix);
+bool	directoryExists(const std::string &path);
+bool	fileExists(const std::string &path);
 std::string int_to_string(int number);
-void print_n_newlines(uint n);
-
+void	print_n_newlines(uint n);
+void	replace_all(std::string &str, std::string search_for,
+			std::string replace_with);
 
 // template functions
 template <typename Container> void print_container(const Container &container,
@@ -76,10 +79,12 @@ struct	Address_Comparator
 	bool operator()(const Address &addr) const;
 };
 
-struct ReplaceDash {
-    char operator()(char c) const {
-        return c == '-' ? '_' : c;
-    }
+struct	ReplaceDash
+{
+	char operator()(char c) const
+	{
+		return (c == '-' ? '_' : c);
+	}
 };
 
 } // namespace util
