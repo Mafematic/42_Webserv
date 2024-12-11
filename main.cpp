@@ -47,8 +47,4 @@ int main(int argc, char **argv)
 // 	analyser.analyse(test_str, root);
 // 	std::cout << analyser;
 
-<<<<<<< Updated upstream
 // }
-=======
-// }
->>>>>>> Stashed changes
