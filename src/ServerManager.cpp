@@ -62,7 +62,6 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	client.setRoute(client.getServer());
 	currentRoute = client.getRoute();
 
-	std::cout << RED << currentRoute.get_location() << RESET << std::endl;
 	if (currentRoute.get_location() == "/cgi-bin/")
 	{
 		std::cout << RED << "CGI Request" << RESET << std::endl;
@@ -72,7 +71,7 @@ void ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 		return;
 	}
 	// for testing the cgi , exits the program>>>
-	testCgi(client, currentRoute);
+	//testCgi(client, currentRoute);
 	// <<< for testing the cgi
 	client.generateResponse();
 	client.updateLastActivity();
@@ -104,7 +103,7 @@ void ServerManager::handleClientResponse(Client &client)
 void	ServerManager::handleCGI(Client &client, int cgi_fd)
 {
 	std::cout << RED << "handling CGI" << RESET << std::endl;
-	//cgi_controllers.erase(cgi_fd);
+	cgi_controllers.erase(_eventFd);
 	client.setCGIfinished(false);
 
 	char buffer[BUFFER_SIZE];
@@ -120,9 +119,7 @@ void	ServerManager::handleCGI(Client &client, int cgi_fd)
 		std::cerr << "Error reading from CGI pipe" << std::endl;
 		return;
 	}
-
 	client.setResponse(response);
-	std::cout << RED << "Response:\n" << client.getResponse() << RESET << std::endl;
 }
 
 //-------------------------------------------------SERVER LOOP-------------------------------------------------//
@@ -159,8 +156,6 @@ void ServerManager::run()
 				{
 					std::cout << RED << "CGI finished" << RESET << std::endl;
 					handleCGI(_clients[cgi_controllers[_eventFd].corresponding_client.getFd()], _eventFd);
-					std::cout << RED << "Response:\n" << _clients[cgi_controllers[_eventFd].corresponding_client.getFd()].getResponse() << RESET << std::endl;
-					//cgi_controllers.erase(_eventFd);
 				}
 			}
 			else if (events[i].events & EPOLLOUT)
@@ -185,10 +180,7 @@ void	ServerManager::checkForCGI()
 		if (_clients.find(it->second.corresponding_client.getFd()) == _clients.end())
 			return ;
 		if (_clients[it->second.corresponding_client.getFd()].getCGIfinished() == true)
-		{
 			++it;
-
-		}
 		else if (status == CGI_EXITED_NORMAL)
 		{
 			_clients[it->second.corresponding_client.getFd()].setCGIfinished(true);
@@ -198,6 +190,8 @@ void	ServerManager::checkForCGI()
 		else if (status == CGI_EXITED_ERROR || status == CGI_KILLED_TIMEOUT)
 		{
 			//error code ???
+			//_clients[it->second.corresponding_client.getFd()].setResponse("HTTP/1.1 404 Not Found\r\n");
+			cgi_controllers.erase(it->first);
 			++it;
 		}
 		else
@@ -237,7 +231,6 @@ void	ServerManager::acceptNewCGIConnection(int clientFD)
 	Client client = _clients[clientFD];
 	Cgi_Controller	cgi(client);
 	cgi.start_cgi();
-	std::cout << "start: " << cgi.corresponding_client.getFd() << std::endl;
 
 	int cgi_fd = cgi.pipe_receive_cgi_answer[0];
 
@@ -250,8 +243,6 @@ void	ServerManager::acceptNewCGIConnection(int clientFD)
 		return ;
 	}
 	cgi_controllers[cgi_fd] = cgi;
-	std::cout << "End: " << cgi_controllers[cgi_fd].corresponding_client.getFd() << std::endl;
-	//try catch <-----------------------
 
 }
 
