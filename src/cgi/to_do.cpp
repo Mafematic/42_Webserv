@@ -41,3 +41,5 @@ SERVER_SOFTWARE -> socket_squad_404/1.0
 
 - run cgi in correct directory
 
+- delete file in cgi controller, after child has finished
+- handle errors within cgi

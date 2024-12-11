@@ -50,8 +50,10 @@ class Cgi_Controller
 	int executor_pid_id;
 	e_cgi_status status;
 	time_t executor_start_time;
+	bool tmp_file_was_deleted;
 
 	std::string get_random_string(size_t length);
 	bool check_cgi_executor_timeout();
 	bool check_cgi_executor_finished();
+	void remove_cgi_tmp_infile();
 };

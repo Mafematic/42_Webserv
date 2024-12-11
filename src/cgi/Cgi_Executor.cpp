@@ -217,7 +217,8 @@ void Cgi_Executor::run_script()
 	util::print_n_newlines(3);
 	std::cout << std::flush;
 	execve(this->argv_arr[0], this->argv_arr, this->env_arr);
-	throw(CgiExecutorSystemFunctionFailed("execve"));
+	exit(12);
+	// throw(CgiExecutorSystemFunctionFailed("execve"));
 }
 
 Cgi_Executor::CgiExecutorSystemFunctionFailed::CgiExecutorSystemFunctionFailed(std::string function_name) : _function_name(function_name)
@@ -232,7 +233,7 @@ const char *Cgi_Executor::CgiExecutorSystemFunctionFailed::what() const throw()
 {
 	this->_msg = "system call: ";
 	this->_msg += this->_function_name;
-	this->_msg = " failed inside the Cgi_Executor";
+	this->_msg += " failed inside the Cgi_Executor";
 	this->_msg += "\n";
 	return (this->_msg.c_str());
 }

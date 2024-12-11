@@ -48,6 +48,7 @@ enum	State
 #include <unistd.h>
 #include <fcntl.h>
 #include <cstring>
+#include <cstdio>
 #include <sstream>
 #include <vector>
 #include <map>

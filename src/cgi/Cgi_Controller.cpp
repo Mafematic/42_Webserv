@@ -12,9 +12,12 @@
 
 #include "Cgi_Controller.hpp"
 
-Cgi_Controller::Cgi_Controller(){}
+Cgi_Controller::Cgi_Controller()
+{
+}
 
-Cgi_Controller::Cgi_Controller(Client client) : corresponding_client(client), status(CGI_RUNNING)
+Cgi_Controller::Cgi_Controller(Client client) : corresponding_client(client),
+	status(CGI_RUNNING), tmp_file_was_deleted(false)
 {
 	this->tmp_file_name = "aaa_" + this->get_random_string(32);
 	return ;
@@ -55,10 +58,8 @@ Cgi_Controller::~Cgi_Controller(void)
 void Cgi_Controller::start_cgi()
 {
 	// char	buffer[10000];
-
 	// buffer[1] = 'A';
 	// buffer[0] = '\0';
-
 	this->executor_start_time = time(NULL);
 	if (pipe(this->pipe_receive_cgi_answer) < 0)
 		throw(CgiControllerSystemFunctionFailed("pipe"));
@@ -108,17 +109,19 @@ e_cgi_status Cgi_Controller::check_cgi()
 		if (kill(this->executor_pid_id, SIGKILL) < 0)
 			throw(CgiControllerSystemFunctionFailed("kill"));
 		this->status = CGI_KILLED_TIMEOUT;
+		this->remove_cgi_tmp_infile();
 		return (this->status);
 	}
 	result = waitpid(this->executor_pid_id, &status, WNOHANG);
 	if (result == 0)
 	{
-		//std::cout << "Child process is still running..." << std::endl;
+		// std::cout << "Child process is still running..." << std::endl;
 		return (this->status);
 	}
 	else if (result == this->executor_pid_id)
 	{
 		std::cout << "Child process has finished!" << std::endl;
+		this->remove_cgi_tmp_infile();
 		if (WIFEXITED(status))
 		{
 			this->status = CGI_EXITED_NORMAL;
@@ -137,10 +140,21 @@ e_cgi_status Cgi_Controller::check_cgi()
 
 bool Cgi_Controller::check_cgi_executor_timeout()
 {
-	//std::cout << "Checking for CGI Timeout..." << std::endl;
+	// std::cout << "Checking for CGI Timeout..." << std::endl;
 	if (time(NULL) - this->executor_start_time > CGI_TIMEOUT_SEC)
 		return (true);
 	return (false);
+}
+
+void Cgi_Controller::remove_cgi_tmp_infile()
+{
+	if (!this->tmp_file_was_deleted)
+	{
+		if (std::remove(this->tmp_file_name.c_str()) != 0)
+			throw(CgiControllerSystemFunctionFailed("remove"));
+		this->tmp_file_was_deleted = true;
+	}
+	std::cout << "CGI CONTROLLER: TMP FILE WAS DELETED!" << std::endl;
 }
 
 Cgi_Controller::CgiControllerSystemFunctionFailed::CgiControllerSystemFunctionFailed(std::string function_name) : _function_name(function_name)
@@ -162,16 +176,14 @@ const char *Cgi_Controller::CgiControllerSystemFunctionFailed::what() const thro
 
 std::string Cgi_Controller::get_random_string(size_t length)
 {
-	const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	const size_t charset_size = sizeof(charset) - 1;
+	const char		charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	const size_t	charset_size = sizeof(charset) - 1;
+
 	std::string random_string;
-
 	std::srand(static_cast<unsigned int>(std::time(0)));
-
 	for (size_t i = 0; i < length; ++i)
 	{
 		random_string += charset[std::rand() % charset_size];
 	}
-
 	return (random_string);
 }
