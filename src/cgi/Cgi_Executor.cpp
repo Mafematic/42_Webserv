@@ -67,6 +67,7 @@ void Cgi_Executor::start_cgi()
 {
 	this->body = this->_corresponding_request.getBody();
 	this->analyse_path();
+	std::cerr << this->_path_analyser;
 	this->init_env_map();
 	this->add_http_headers_to_env_map();
 	this->env_map_to_env_arr();
@@ -102,7 +103,6 @@ void Cgi_Executor::put_request_body_into_stdin()
 
 void Cgi_Executor::init_env_map()
 {
-
 	// required for php-cgi >>>
 	this->env_map["REDIRECT_STATUS"] = "200";
 	this->env_map["SCRIPT_FILENAME"] = this->_path_analyser.path_translated;
@@ -190,10 +190,8 @@ void Cgi_Executor::env_map_to_env_arr()
 void Cgi_Executor::create_argv_arr()
 {
 	std::string arg_0 = this->_corresponding_route.get_cgi_interpreter(this->_path_analyser.script_extension);
-	if(arg_0.length() == 0)
+	if (arg_0.length() == 0)
 		arg_0 = this->_corresponding_route.get_cgi_interpreter("sh");
-	// std::string arg_0 = "/usr/bin/bash";
-	// std::string arg_1 = "src/cgi/print_env_body.php";
 	std::string arg_1 = this->_path_analyser.path_translated;
 	this->argv_arr = new char *[3];
 	this->argv_arr[0] = NULL;

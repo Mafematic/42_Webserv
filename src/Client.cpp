@@ -41,6 +41,7 @@ Client	&Client::operator=(const Client &src)
 	_responseSentBytes = src._responseSentBytes;
 	_responselength = src._responselength;
 	req = src.req;
+	route = src.route;
 	_client_port = src._client_port;
 	std::strcpy(_client_ip, src._client_ip);
 	_cgi_finished = src._cgi_finished;
