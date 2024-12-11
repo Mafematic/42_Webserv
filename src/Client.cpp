@@ -12,6 +12,7 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
+	_cgi_finished = 0;
 
 	inet_ntop(AF_INET, &(client_addr.sin_addr), _client_ip, INET_ADDRSTRLEN);
 	_client_port = ntohs(client_addr.sin_port);
@@ -42,6 +43,7 @@ Client	&Client::operator=(const Client &src)
 	req = src.req;
 	_client_port = src._client_port;
 	std::strcpy(_client_ip, src._client_ip);
+	_cgi_finished = src._cgi_finished;
 	return *this;
 }
 
@@ -249,12 +251,17 @@ Server Client::getServer()
 	return server;
 }
 
-void Client::setResponse()
+void Client::generateResponse()
 {
     this->response = RequestRouter::route(req, server);
     _responselength = response.length();
 }
 
+void	Client::setResponse(std::string set_response)
+{
+	response = set_response;
+	_responselength = set_response.length();
+}
 
 std::string Client::getResponse()
 {
@@ -290,4 +297,14 @@ void Client::setRoute(const Server &server)
 Route Client::getRoute() const
 {
     return route;
+}
+
+bool	Client::getCGIfinished()
+{
+	return _cgi_finished;
+}
+
+void	Client::setCGIfinished(bool status)
+{
+	this->_cgi_finished = status;
 }

@@ -21,6 +21,7 @@
 class Cgi_Controller
 {
   public:
+	Cgi_Controller();
 	Cgi_Controller(Client client);
 	Cgi_Controller(const Cgi_Controller &other);
 	Cgi_Controller &operator=(const Cgi_Controller &other);

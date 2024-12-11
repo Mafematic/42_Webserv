@@ -12,6 +12,8 @@
 
 #include "Cgi_Controller.hpp"
 
+Cgi_Controller::Cgi_Controller(){}
+
 Cgi_Controller::Cgi_Controller(Client client) : corresponding_client(client), status(CGI_RUNNING)
 {
 	this->tmp_file_name = "aaa_" + this->get_random_string(32);
@@ -26,7 +28,7 @@ Cgi_Controller::Cgi_Controller(const Cgi_Controller &other)
 	this->executor_start_time = other.executor_start_time;
 	this->tmp_file_name = other.tmp_file_name;
 	this->status = other.status;
-	// this->corresponding_client = other.corresponding_client;
+	this->corresponding_client = other.corresponding_client;
 	return ;
 }
 
@@ -40,7 +42,7 @@ Cgi_Controller &Cgi_Controller::operator=(const Cgi_Controller &other)
 		this->executor_start_time = other.executor_start_time;
 		this->tmp_file_name = other.tmp_file_name;
 		this->status = other.status;
-		// this->corresponding_client = other.corresponding_client;
+		this->corresponding_client = other.corresponding_client;
 	}
 	return (*this);
 }

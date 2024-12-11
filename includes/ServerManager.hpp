@@ -20,6 +20,7 @@ class ServerManager
 		void run();
 		void	handleClientRequest(Client &client, std::vector<Server> servers);
 		void	handleClientResponse(Client &client);
+		void	handleCGI(Client &client, int cgi_fd);
 		Server	getServer(std::vector<Server> servers, Request req);
 		void	closeConnection(Client &client, std::string reason);
 
@@ -32,12 +33,12 @@ class ServerManager
 		int							_epollFd;
 		int							_eventFd;
 
-		std::map<int, Cgi_Controller> cgi_controllers;
+		std::map<int, Cgi_Controller>	cgi_controllers;
 
 		int		createEpoll();
 		int		epollAddSockets();
 		void	acceptNewConnection(Serverhandler handler);
-		void	acceptNewCGIConnection(Client client);
+		void	acceptNewCGIConnection(int clientFD);
 		void	setNonBlocking(int clientSocket);
 		void	checkTimeout();
 		void	checkForCGI();

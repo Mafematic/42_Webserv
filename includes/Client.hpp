@@ -33,6 +33,7 @@ class Client
 		// check_header_received()
 
 		//struct sockaddr_in	client_addr;
+		bool	_cgi_finished;
 
 		int					_client_port;
 		char				_client_ip[INET_ADDRSTRLEN];
@@ -66,8 +67,9 @@ class Client
 		bool isChunked();
 		void setServer(std::vector<Server> servers);
 		Server getServer();
-		void setResponse();
-		std::string getResponse();
+		void		generateResponse();
+		void		setResponse(std::string response);
+		std::string	getResponse();
 
 		void	setRequest();
 		Request	getRequest();
@@ -76,6 +78,10 @@ class Client
 		std::string	getIp();
 		void setRoute(const Server &server);
 		Route getRoute() const;
+
+		bool	getCGIfinished();
+		void	setCGIfinished(bool status);
+
 
 };
 
