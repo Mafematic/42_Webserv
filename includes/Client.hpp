@@ -16,7 +16,6 @@ class Client
 		Serverhandler	handler;
 
 		std::string			response;
-		size_t				_responselength;
 		size_t				_responseSentBytes;
 
 		bool				_isChunked;
@@ -39,6 +38,8 @@ class Client
 		char				_client_ip[INET_ADDRSTRLEN];
 
 	public:
+			size_t				_responselength;
+
 		Client();
 		Client(int clientFd, Serverhandler handler, struct sockaddr_in client_addr);
 		Client(const Client &src);

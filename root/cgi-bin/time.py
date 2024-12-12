@@ -11,7 +11,6 @@ def main():
     print("Access-Control-Allow-Origin: *")
     print("Access-Control-Allow-Methods: GET, POST, DELETE")
     print("Access-Control-Allow-Headers: *")
-    print()
 
     html_content = f"""
     <html>
@@ -53,6 +52,9 @@ def main():
     </html>
     """
 
+    print(f"Content-Length: {len(html_content.encode('utf-8'))}\r\n")
+    print()
+    
     print(html_content)
     
 

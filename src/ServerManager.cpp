@@ -87,7 +87,7 @@ void ServerManager::handleClientResponse(Client &client)
 		return ;
 	if (client.getResponse().find("Connection: close") != std::string::npos)
 		close = 1;
-	std::cout << PURPLE << client.getResponse() << std::endl;
+	std::cout << PURPLE << client.getResponse() << "\nRepsonelength: " << client._responselength << std::endl;
 	int status = client.sendResponse();
 	if (status == SEND_ERROR)
 		return (closeConnection(client, "[Failed to send response]"));
@@ -120,6 +120,7 @@ void	ServerManager::handleCGI(Client &client, int cgi_fd)
 		return;
 	}
 	client.setResponse(response);
+	//std::cout << RED << "RESPONSE CGI\n" << client.getResponse() << RESET << std::endl; 
 }
 
 //-------------------------------------------------SERVER LOOP-------------------------------------------------//
@@ -191,6 +192,7 @@ void	ServerManager::checkForCGI()
 		{
 			//error code ???
 			//_clients[it->second.corresponding_client.getFd()].setResponse("HTTP/1.1 404 Not Found\r\n");
+			std::cout << RED << "CGI ERROR" << RESET << std::endl;
 			cgi_controllers.erase(it->first);
 			++it;
 		}

@@ -43,3 +43,7 @@ SERVER_SOFTWARE -> socket_squad_404/1.0
 
 - delete file in cgi controller, after child has finished
 - handle errors within cgi
+
+- error handling when cgi executor fails
+- enter body for post script to be displayed
+- content-length sh
