@@ -14,7 +14,9 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_bytesReceived = 0;
 	_cgi_finished = 0;
 
-	inet_ntop(AF_INET, &(client_addr.sin_addr), _client_ip, INET_ADDRSTRLEN);
+	 char ipBuffer[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
+	_client_ip = ipBuffer;
 	_client_port = ntohs(client_addr.sin_port);
 }
 
@@ -43,7 +45,7 @@ Client	&Client::operator=(const Client &src)
 	req = src.req;
 	route = src.route;
 	_client_port = src._client_port;
-	std::strcpy(_client_ip, src._client_ip);
+	_client_ip = src._client_ip;
 	_cgi_finished = src._cgi_finished;
 	return *this;
 }

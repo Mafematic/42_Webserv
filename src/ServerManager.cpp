@@ -37,7 +37,7 @@ void ServerManager::setup(std::string config_path)
 
 //-------------------------------------------------HANDLE CLIENT REQUEST & RESPONSE-------------------------------------------------//
 
-void ServerManager::handleClientRequest(Client &client, std::vector<Server> servers)
+void	ServerManager::handleClientRequest(Client &client, std::vector<Server> servers)
 {
 	int		status;
 	Route	currentRoute;
@@ -87,7 +87,6 @@ void ServerManager::handleClientResponse(Client &client)
 		return ;
 	if (client.getResponse().find("Connection: close") != std::string::npos)
 		close = 1;
-	std::cout << PURPLE << client.getResponse() << "\nRepsonelength: " << client._responselength << std::endl;
 	int status = client.sendResponse();
 	if (status == SEND_ERROR)
 		return (closeConnection(client, "[Failed to send response]"));
@@ -103,8 +102,6 @@ void ServerManager::handleClientResponse(Client &client)
 void	ServerManager::handleCGI(Client &client, int cgi_fd)
 {
 	std::cout << RED << "handling CGI" << RESET << std::endl;
-	cgi_controllers.erase(_eventFd);
-	client.setCGIfinished(false);
 
 	char buffer[BUFFER_SIZE];
 	std::string response;
@@ -119,8 +116,11 @@ void	ServerManager::handleCGI(Client &client, int cgi_fd)
 		std::cerr << "Error reading from CGI pipe" << std::endl;
 		return;
 	}
+	client.setCGIfinished(false);
+	cgi_controllers.erase(_eventFd);
+	close(cgi_fd);
+	epoll_ctl(_epollFd, EPOLL_CTL_DEL, cgi_fd, NULL);
 	client.setResponse(response);
-	//std::cout << RED << "RESPONSE CGI\n" << client.getResponse() << RESET << std::endl; 
 }
 
 //-------------------------------------------------SERVER LOOP-------------------------------------------------//
@@ -154,10 +154,7 @@ void ServerManager::run()
 				if (_clients.find(_eventFd) != _clients.end())
 					handleClientRequest(_clients[_eventFd], _clients[_eventFd].getServerhandler().getServers());
 				else if (cgi_controllers.find(_eventFd) != cgi_controllers.end() && _clients[cgi_controllers[_eventFd].corresponding_client.getFd()].getCGIfinished() == true)
-				{
-					std::cout << RED << "CGI finished" << RESET << std::endl;
 					handleCGI(_clients[cgi_controllers[_eventFd].corresponding_client.getFd()], _eventFd);
-				}
 			}
 			else if (events[i].events & EPOLLOUT)
 			{
@@ -171,35 +168,47 @@ void ServerManager::run()
 	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }
 
-void	ServerManager::checkForCGI()
-{
-	if (cgi_controllers.empty())
-		return;
+void ServerManager::checkForCGI() {
 	for (std::map<int, Cgi_Controller>::iterator it = cgi_controllers.begin(); it != cgi_controllers.end(); )
 	{
 		int status = it->second.check_cgi();
-		if (_clients.find(it->second.corresponding_client.getFd()) == _clients.end())
-			return ;
-		if (_clients[it->second.corresponding_client.getFd()].getCGIfinished() == true)
-			++it;
-		else if (status == CGI_EXITED_NORMAL)
+		int client_fd = it->second.corresponding_client.getFd();
+
+		if (_clients.find(client_fd) == _clients.end())
 		{
-			_clients[it->second.corresponding_client.getFd()].setCGIfinished(true);
-			std::cout << RED << "CGI checker, cgi exited " << RESET << it->second.corresponding_client.getFd() << std::endl;
+			std::cout << YELLOW << "Client disconnected before CGI completion, cleaning up" << RESET << std::endl;
+			close(it->first);
+			epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->first, NULL);
+			cgi_controllers.erase(it++);
+			continue;
+		}
+
+		if (_clients[client_fd].getCGIfinished())
+		{
 			++it;
+			continue;
+		}
+
+		if (status == CGI_EXITED_NORMAL)
+		{
+			_clients[client_fd].setCGIfinished(true);
+			std::cout << GREEN << "CGI exited normally for client " << client_fd << RESET << std::endl;
 		}
 		else if (status == CGI_EXITED_ERROR || status == CGI_KILLED_TIMEOUT)
 		{
-			//error code ???
-			//_clients[it->second.corresponding_client.getFd()].setResponse("HTTP/1.1 404 Not Found\r\n");
-			std::cout << RED << "CGI ERROR" << RESET << std::endl;
-			cgi_controllers.erase(it->first);
-			++it;
+			std::cout << RED << "CGI exited with error for client " << client_fd << RESET << std::endl;
+			if (_clients.find(client_fd) != _clients.end())
+				_clients[client_fd].setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
+			close(it->first);
+			epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->first, NULL);
+			cgi_controllers.erase(it++);
+			continue;
 		}
-		else
-			++it;
+
+		++it;
 	}
 }
+
 
 void ServerManager::checkTimeout()
 {
@@ -232,10 +241,20 @@ void	ServerManager::acceptNewCGIConnection(int clientFD)
 {
 	Client client = _clients[clientFD];
 	Cgi_Controller	cgi(client);
-	cgi.start_cgi();
+	try
+	{
+		cgi.start_cgi();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		//_clients[clientFD].setResponse("");
+		//Errorcode <---------------
+	}
 
 	int cgi_fd = cgi.pipe_receive_cgi_answer[0];
 
+	setNonBlocking(cgi_fd);
 	_ev.events = EPOLLIN;
 	_ev.data.fd = cgi_fd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, cgi_fd, &_ev) == -1)
@@ -255,8 +274,7 @@ void ServerManager::acceptNewConnection(Serverhandler handler)
 	int					clientSocket;
 
 	client_len = sizeof(client_addr);
-	clientSocket = accept(_eventFd, (struct sockaddr *)&client_addr,
-			&client_len);
+	clientSocket = accept(_eventFd, (struct sockaddr *)&client_addr, &client_len);
 	if (clientSocket >= 0)
 	{
 		setNonBlocking(clientSocket);
@@ -333,42 +351,42 @@ int ServerManager::epollAddSockets()
 	return (1);
 }
 
-void ServerManager::testCgi(Client &client, Route &currentRoute)
-{
-	char	buffer[1000];
-	ssize_t	bytesRead;
+// void ServerManager::testCgi(Client &client, Route &currentRoute)
+// {
+// 	char	buffer[1000];
+// 	ssize_t	bytesRead;
 
-	std::cout << std::endl << std::endl << std::endl;
-	std::cout << currentRoute.get_location();
-	std::cout << client.getRequest().getBody();
-	client.getRequest().print_header();
-	std::cout << std::endl << std::endl << std::endl;
-	if (currentRoute.get_location() == "/cgi-bin/")
-	{
-		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
-		Cgi_Controller controller(client);
-		controller.start_cgi();
-		while (controller.check_cgi() == CGI_RUNNING)
-		{
-			std::cout << "waiting for cgi" << std::endl;
-			sleep(1);
-		}
-		if (controller.check_cgi() == CGI_EXITED_NORMAL)
-			std::cout << "Exited Normally" << std::endl;
-		if (controller.check_cgi() == CGI_KILLED_TIMEOUT)
-			std::cout << "Exited Killed Timeout" << std::endl;
-		if (controller.check_cgi() == CGI_EXITED_ERROR)
-			std::cout << "Exited Error" << std::endl;
-		while ((bytesRead = read(controller.pipe_receive_cgi_answer[0], buffer,
-					1000 - 1)) > 0)
-		{
-			buffer[bytesRead] = '\0';
-			write(client.getFd(), buffer, bytesRead);
-			std::cout << buffer;
-		}
-		exit(1);
-	}
-}
+// 	std::cout << std::endl << std::endl << std::endl;
+// 	std::cout << currentRoute.get_location();
+// 	std::cout << client.getRequest().getBody();
+// 	client.getRequest().print_header();
+// 	std::cout << std::endl << std::endl << std::endl;
+// 	if (currentRoute.get_location() == "/cgi-bin/")
+// 	{
+// 		std::cout << RED << "CGI REQUEST" << RESET << std::endl;
+// 		Cgi_Controller controller(client);
+// 		controller.start_cgi();
+// 		while (controller.check_cgi() == CGI_RUNNING)
+// 		{
+// 			std::cout << "waiting for cgi" << std::endl;
+// 			sleep(1);
+// 		}
+// 		if (controller.check_cgi() == CGI_EXITED_NORMAL)
+// 			std::cout << "Exited Normally" << std::endl;
+// 		if (controller.check_cgi() == CGI_KILLED_TIMEOUT)
+// 			std::cout << "Exited Killed Timeout" << std::endl;
+// 		if (controller.check_cgi() == CGI_EXITED_ERROR)
+// 			std::cout << "Exited Error" << std::endl;
+// 		while ((bytesRead = read(controller.pipe_receive_cgi_answer[0], buffer,
+// 					1000 - 1)) > 0)
+// 		{
+// 			buffer[bytesRead] = '\0';
+// 			write(client.getFd(), buffer, bytesRead);
+// 			std::cout << buffer;
+// 		}
+// 		exit(1);
+// 	}
+// }
 
 //-------------------------------------------------CONSTRUCTORS & DESTRUCTORS-------------------------------------------------//
 
