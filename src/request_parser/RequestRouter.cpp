@@ -90,6 +90,18 @@ std::string RequestRouter::route(Request &req, const Server &server)
     Route route = _getRoute(server, req);
     std::string rootPath = server.get_final_root(route);
 
+	std::string method = req.getMethod();
+	for (size_t i = 0; i < method.size(); ++i)
+	{
+		method[i] = std::tolower(method[i]);
+	}
+
+    if (!route.is_method_allowed(method))
+	{
+        customError = getCustomErrorPage(rootPath, route, 405, server);
+        return _serveFile(customError, 405, req);
+    }
+
 	std::string path = req.getPath();
 	if (route.get_alias_is_defined())
 	{
