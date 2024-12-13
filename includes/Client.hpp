@@ -34,6 +34,8 @@ class Client
 
 		//struct sockaddr_in	client_addr;
 		bool	_cgi_finished;
+		bool	_cgi;
+
 
 		int					_client_port;
 		std::string			_client_ip;
@@ -51,7 +53,7 @@ class Client
 		int		getFd();
 		void	updateLastActivity();
 
-		int		readRequest();
+		int		readRequest(int fd);
 		bool	requestComplete();
 		void	clearRequest();
 		void	getContentLength();
@@ -81,6 +83,8 @@ class Client
 
 		bool	getCGIfinished();
 		void	setCGIfinished(bool status);
+		bool	getCgi();
+		void	setCGI(bool status);
 
 
 };

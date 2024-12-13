@@ -2,6 +2,7 @@
 #define SERVERMANAGER_HPP
 
 #include "Client.hpp"
+#include "Logger.hpp"
 #include "Serverhandler.hpp"
 #include "RequestRouter.hpp"
 #include "Config_Parser.hpp"

@@ -26,6 +26,15 @@ enum	e_cgi_status
 	CGI_KILLED_TIMEOUT
 };
 
+enum	LogLevel
+{
+	DEBUG,
+	INFO,
+	TRACE,
+	WARNING,
+	ERROR
+};
+
 enum	State
 {
 	READ_ERROR = -1,

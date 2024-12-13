@@ -12,7 +12,8 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
-	_cgi_finished = 0;
+	_cgi_finished = false;
+	_cgi = false;
 
 	 char ipBuffer[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
@@ -47,6 +48,7 @@ Client	&Client::operator=(const Client &src)
 	_client_port = src._client_port;
 	_client_ip = src._client_ip;
 	_cgi_finished = src._cgi_finished;
+	_cgi = src._cgi;
 	return *this;
 }
 
@@ -54,11 +56,11 @@ Client::~Client(){}
 
 //------------------------------------READ REQUEST------------------------------------//
 
-int	Client::readRequest()
+int	Client::readRequest(int fd)
 {
 	char buffer[BUFFER_SIZE];
 
-	ssize_t bytesRead = read(clientFd, buffer, BUFFER_SIZE);
+	ssize_t bytesRead = read(fd, buffer, BUFFER_SIZE);
 	if (bytesRead < 0)
 		return READ_ERROR;
 	else if (bytesRead == 0)
@@ -76,6 +78,12 @@ int	Client::readRequest()
 
 bool	Client::requestComplete()
 {
+	if (_cgi)
+	{
+		if (_cgi_finished == true)
+			return true;
+		return false;
+	}
 	if (_isChunked)
 		return false;
 	if (_buffer.find("\r\n\r\n") != std::string::npos)
@@ -256,8 +264,8 @@ Server Client::getServer()
 
 void Client::generateResponse()
 {
-    this->response = RequestRouter::route(req, server);
-    _responselength = response.length();
+	this->response = RequestRouter::route(req, server);
+	_responselength = response.length();
 }
 
 void	Client::setResponse(std::string set_response)
@@ -310,4 +318,14 @@ bool	Client::getCGIfinished()
 void	Client::setCGIfinished(bool status)
 {
 	this->_cgi_finished = status;
+}
+
+bool	Client::getCgi()
+{
+	return _cgi;
+}
+
+void	Client::setCGI(bool status)
+{
+	this->_cgi = status;
 }
