@@ -260,6 +260,7 @@ Server Client::getServer()
 void Client::generateResponse()
 {
 	this->response = RequestRouter::route(req, server);
+	std::cout << "Response " << this->response << std::endl;
 	_responselength = response.length();
 }
 

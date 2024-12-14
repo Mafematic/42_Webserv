@@ -7,10 +7,8 @@
 #include <fstream>     // For std::ifstream
 #include <string>
 
-// Implement Return statement
 // Check for uploaded content --> html, jpeg 
 // Check permission for delete --> only one folder
-// Delete only from upload folder
 // Cleaning
 
 std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
@@ -275,9 +273,19 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	}
 	if (req.getMethod() == "DELETE")
 	{
-		if (util::fileExists(filepath))
+		// Convert the request path to a relative path
+    	std::string relativePath = req.getPath();
+    	if (!relativePath.empty() && relativePath[0] == '/')
 		{
-			if (remove(filepath.c_str()) == 0)
+        	relativePath = relativePath.substr(1); // Remove the leading slash
+    	}
+
+		std::string fullFilePath = "./" + relativePath;
+
+		// Check if the file exists and delete it
+		if (util::fileExists(fullFilePath))
+		{
+			if (remove(fullFilePath.c_str()) == 0)
 			{
 				return _serveFile(filepath, 200, req);
 			}
@@ -290,10 +298,9 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		else
 		{
 			customError = getCustomErrorPage(rootPath, route, 404, server);
-			return _serveFile(customError, 404, req); // File not found
-   		}
+			return _serveFile(customError, 404, req);
+		}
 	}
-
 	customError = getCustomErrorPage(rootPath, route, 404, server);
 	return _serveFile(customError, 404, req);
 }
@@ -379,7 +386,13 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 	bool isRedirect = (statusCode >= 300 && statusCode < 400);
 	if (isRedirect)
 	{
-		statusLine += "\r\nLocation: " + contentOrFilepath;
+		// Ensure the Location header contains an absolute path
+		std::string locationPath = contentOrFilepath;
+		if (locationPath[0] != '/')
+		{
+			locationPath = "/" + locationPath.substr(locationPath.find("default_pages"));
+    	}
+    statusLine += "\r\nLocation: " + locationPath;
 	}
     if (req.getKeepAlive())
     {
@@ -402,9 +415,6 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 Route RequestRouter::_getRoute(const Server &server, Request &req)
 {
 
-	//"/test/hallo/"
-
-	//"./" "./root" "./test/"
     std::vector<Route> routes = server.get_routes();
     std::string path = req.getPath();
 
