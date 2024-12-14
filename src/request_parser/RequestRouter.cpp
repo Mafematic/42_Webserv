@@ -7,6 +7,12 @@
 #include <fstream>     // For std::ifstream
 #include <string>
 
+// Implement Return statement
+// Check for uploaded content --> html, jpeg 
+// Check permission for delete --> only one folder
+// Delete only from upload folder
+// Cleaning
+
 std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
 {
 	std::string code = util::to_string(statusCode);
@@ -87,8 +93,21 @@ std::string RequestRouter::route(Request &req, const Server &server)
 {
 	std::string customError;
 
-    Route route = _getRoute(server, req);
-    std::string rootPath = server.get_final_root(route);
+    if (server.get_return_is_defined())
+	{
+		util::Return_Definition serverReturn = server.get_return();
+		return _serveFile(serverReturn.url, serverReturn.status_code, req);
+	}
+
+	Route route = _getRoute(server, req);
+	std::string rootPath = server.get_final_root(route);
+
+	// Check for route-level return directive
+	if (route.get_return_is_defined())
+	{
+		util::Return_Definition routeReturn = route.get_return();
+		return _serveFile(routeReturn.url, routeReturn.status_code, req);
+	}
 
 	std::string method = req.getMethod();
 	for (size_t i = 0; i < method.size(); ++i)
@@ -304,28 +323,52 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 
     std::string statusLine;
     switch (statusCode)
-    {
-        case 200:
-            statusLine = "HTTP/1.1 200 OK";
-            break;
-        case 303:
-            statusLine = "HTTP/1.1 303 See Other";
-            break;
-		case 403:
-        	statusLine = "HTTP/1.1 403 Forbidden";
+	{
+		case 200:
+			statusLine = "HTTP/1.1 200 OK";
 			break;
-        case 404:
-            statusLine = "HTTP/1.1 404 Not Found";
-            break;
-        case 413:
-            statusLine = "HTTP/1.1 413 Payload Too Large";
-            break;
-        case 500:
-            statusLine = "HTTP/1.1 500 Internal Server Error";
-            break;
-        default:
-            statusLine = "HTTP/1.1 200 OK";
-    }
+		case 301:
+			statusLine = "HTTP/1.1 301 Moved Permanently";
+			break;
+		case 302:
+			statusLine = "HTTP/1.1 302 Found";
+			break;
+		case 303:
+			statusLine = "HTTP/1.1 303 See Other";
+			break;
+		case 307:
+			statusLine = "HTTP/1.1 307 Temporary Redirect";
+			break;
+		case 308:
+			statusLine = "HTTP/1.1 308 Permanent Redirect";
+			break;
+		case 400:
+			statusLine = "HTTP/1.1 400 Bad Request";
+			break;
+		case 403:
+			statusLine = "HTTP/1.1 403 Forbidden";
+			break;
+		case 404:
+			statusLine = "HTTP/1.1 404 Not Found";
+			break;
+		case 405:
+			statusLine = "HTTP/1.1 405 Method Not Allowed";
+			break;
+		case 413:
+			statusLine = "HTTP/1.1 413 Payload Too Large";
+			break;
+		case 500:
+			statusLine = "HTTP/1.1 500 Internal Server Error";
+			break;
+		case 502:
+			statusLine = "HTTP/1.1 502 Bad Gateway";
+			break;
+		case 503:
+			statusLine = "HTTP/1.1 503 Service Unavailable";
+			break;
+		default:
+			statusLine = "HTTP/1.1 500 Internal Server Error";
+	}
 
     statusLine += "\r\nContent-Type: text/html";
 	//statusLine += "\r\nContent-Type: image/png";
@@ -333,11 +376,11 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
     statusLine += "\r\nContent-Length: ";
     statusLine += util::to_string(content.size());
 
-    if (statusCode == 303) // Include Location header for redirection
+	bool isRedirect = (statusCode >= 300 && statusCode < 400);
+	if (isRedirect)
 	{
-		statusLine += "\r\nLocation: /303.html"; // Redirect to /303.html
+		statusLine += "\r\nLocation: " + contentOrFilepath;
 	}
-
     if (req.getKeepAlive())
     {
         statusLine += "\r\nConnection: keep-alive";
@@ -347,13 +390,10 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
         statusLine += "\r\nConnection: close";
     }
     statusLine += "\r\n\r\n";
-    if (statusCode != 303) // Avoid body for 303
-    {
-        statusLine += content;
-    }
-
-    //std::cout << "+++ Response: " << statusLine << std::endl;
-
+    if (!(statusCode >= 300 && statusCode < 400))
+	{
+		statusLine += content;
+	}
     return statusLine;
 }
 

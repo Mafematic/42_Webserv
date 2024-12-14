@@ -19,7 +19,7 @@ void ServerManager::setup(std::string config_path)
 			{
 				tmp_it->addServer(*it);
 				duplicate_flag = true;
-				Logger::log(WARNING, "[Serverduplicat detected]	added to existing socket: " + tmp_it->getSocket(), "");
+				Logger::log(WARNING, "[Serverduplicat detected]	added to existing socket: " + util::to_string(tmp_it->getSocket()), "");
 				break ;
 			}
 		}
