@@ -80,7 +80,7 @@ void Path_Analyser::find_first_dot()
 	{
 		if (this->path_to_process[this->path_to_process.length() - 1] != '/')
 			this->path_to_process += "/";
-		this->path_to_process += "index.py";
+		this->path_to_process += "time.py";
 		this->_pos_dot = this->path_to_process.find(".");
 	}
 }
