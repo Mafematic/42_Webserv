@@ -12,7 +12,6 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
-	_cgi_finished = false;
 
 	 char ipBuffer[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
@@ -46,7 +45,6 @@ Client	&Client::operator=(const Client &src)
 	route = src.route;
 	_client_port = src._client_port;
 	_client_ip = src._client_ip;
-	_cgi_finished = src._cgi_finished;
 	return *this;
 }
 
@@ -56,7 +54,7 @@ Client::~Client(){}
 
 int	Client::readRequest(int fd)
 {
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFFER_SIZE] = {0};
 
 	ssize_t bytesRead = read(fd, buffer, BUFFER_SIZE);
 	if (bytesRead < 0)
@@ -78,16 +76,21 @@ bool	Client::requestComplete()
 {
 	if (_isChunked)
 		return false;
-	if (_buffer.find("\r\n\r\n") != std::string::npos)
+	size_t headerEnd = _buffer.find("\r\n\r\n");
+	if (headerEnd != std::string::npos)
 	{
 		if (_buffer.find("Transfer-Encoding: chunked") != std::string::npos)
 		{
 			_isChunked = true;
-			_buffer.erase(0, _buffer.find("\r\n\r\n") + 4);
+			_buffer.erase(0, headerEnd + 4);
 			return false;
 		}
+
 		getContentLength();
-		if (_bytesReceived >= _contentLength + _buffer.find("\r\n\r\n") + 4)
+		size_t	bodyStart = headerEnd + 4;
+		size_t	bodyLength = _bytesReceived - bodyStart;
+
+		if (bodyLength >= _contentLength)
 			return true;
 	}
 	return false;
@@ -99,7 +102,7 @@ void	Client::getContentLength()
 	size_t content_length_pos = _buffer.find("Content-Length: ");
 	if (content_length_pos != std::string::npos)
 	{
-		size_t start = content_length_pos + 16; // "Content-Length: " length
+		size_t start = content_length_pos + 16;
 		size_t end = _buffer.find("\r\n", start);
 		std::string content_length_str = _buffer.substr(start, end - start);
 		std::istringstream(content_length_str) >> _contentLength;

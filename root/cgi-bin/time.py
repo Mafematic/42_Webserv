@@ -52,11 +52,10 @@ def main():
     </html>
     """
 
-    print(f"Content-Length: {len(html_content.encode('utf-8'))}\r\n")
-    print()
-    
+    print(f"Content-Length: {len(html_content.encode('utf-8'))}\r\n\r")
+
     print(html_content)
-    
+
 
 if __name__ == "__main__":
     main()

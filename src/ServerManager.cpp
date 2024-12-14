@@ -9,7 +9,7 @@ void ServerManager::setup(std::string config_path)
 	Config_Parser parser(config_path);
 	_server_config = parser.parse_config();
 
-	Logger::log(INFO, "Configuration file parsed");
+	Logger::log(INFO, "Configuration file parsed", "");
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
 		for (std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
@@ -19,7 +19,7 @@ void ServerManager::setup(std::string config_path)
 			{
 				tmp_it->addServer(*it);
 				duplicate_flag = true;
-				Logger::log(WARNING, "[Serverduplicat detected]	added to existing socket: " + tmp_it->getSocket());
+				Logger::log(WARNING, "[Serverduplicat detected]	added to existing socket: " + tmp_it->getSocket(), "");
 				break ;
 			}
 		}
@@ -47,6 +47,7 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	else if (status == READ_NOT_COMPLETE)
 		return ;
 
+	Logger::log(TRACE, "Request read", "");
 	std::cout << LIGHT BLUE << "++++ [REQUEST READ] : ClientFd " << client.getFd() << RESET << std::endl;
 	client.setRequest();
 	client.setServer(servers);
@@ -92,25 +93,24 @@ void ServerManager::handleClientResponse(Client &client)
 void	ServerManager::handleCGI()
 {
 	Client &client = _clients[cgi_controllers[_eventFd].corresponding_client.getFd()];
-	if (!client.getCGIfinished())
-		return ;
+	// if (!client.getCGIfinished())
+	// 	return ;
 	std::cout << RED << "handling CGI" << RESET << std::endl;
 
-	int	status;
-
-	status = client.readRequest(_eventFd);
+	int status = client.readRequest(_eventFd);
 	if (status == READ_ERROR)
 	{
-		Logger::log(ERROR, "Reading from cgi-pipe : clean up ");
+		Logger::log(ERROR, "Reading from cgi-pipe : clean up ", "");
 		client.setCGIfinished(false);
 		close(_eventFd);
 		epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
 		cgi_controllers.erase(_eventFd);
 	}
 	else if (status == READ_NOT_COMPLETE)
-		return ;
+		return Logger::log(INFO, "READ NOT COMPLETED ...", "");
 	else
 	{
+
 		client.setResponse(client.getRequestStr());
 
 		client.setCGIfinished(false);
@@ -118,8 +118,8 @@ void	ServerManager::handleCGI()
 		close(_eventFd);
 		epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
 
-		Logger::log(DEBUG, "CGI read from pipe : ready to send response!");
-		std::cout << "Response: \n" << client.getResponse() << std::endl;
+		Logger::log(DEBUG, "CGI read from pipe : ready to send response!", "");
+		//std::cout << "Response: \n" << client.getResponse() << std::endl;
 		return ;
 	}
 }
@@ -135,7 +135,7 @@ void ServerManager::run()
 	{
 		return ;
 	}
-	Logger::log(INFO, "Servermanager is running");
+	Logger::log(INFO, "Servermanager is running", "");
 	while (g_running)
 	{
 		eventCount = epoll_wait(_epollFd, events, MAX_EVENTS, EPOLL_TIMEOUT);
@@ -161,7 +161,7 @@ void ServerManager::run()
 				handleClientResponse(_clients[_eventFd]);
 		}
 		checkTimeout();
-		checkForCGI();
+		//checkForCGI();
 	}
 	std::cout << RED << "Server shutting down..." << RESET << std::endl;
 }
@@ -196,6 +196,7 @@ void ServerManager::checkForCGI()
 		else if (status == CGI_EXITED_ERROR || status == CGI_KILLED_TIMEOUT)
 		{
 			std::cout << RED << "CGI exited with error for client " << client_fd << RESET << std::endl;
+
 			if (_clients.find(client_fd) != _clients.end())
 				_clients[client_fd].setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
 			close(it->first);
@@ -345,7 +346,7 @@ int ServerManager::epollAddSockets()
 			std::cerr << "Error: epoll_ctl failed for server socket (fd: " << serverSocket << "). Error: " << strerror(errno) << std::endl;
 			return (-1);
 		}
-		Logger::log(INFO, "Socket added to epoll");
+		Logger::log(INFO, "Socket added to epoll", "");
 	}
 	// std::cout << GREEN << "[Info]	All server sockets added to epoll" << RESET << std::endl;
 	return (1);

@@ -1,5 +1,6 @@
 #include "Cgi_Controller.hpp"
 #include "Cgi_Executor.hpp"
+#include "ServerManager.hpp"
 
 Cgi_Executor::Cgi_Executor(Cgi_Controller *val_corresponding_controller) : corresponding_controller(val_corresponding_controller),
 	env_arr(NULL), argv_arr(NULL), body("")

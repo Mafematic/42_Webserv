@@ -13,13 +13,13 @@ def fetch_dog_image():
         return requests.get(image_url, stream=True)
     else:
         return None
-    
+
 def fetch_duck_image():
     random_number = random.randint(1, 200)
     url = f"https://random-d.uk/api/v2/{random_number}.jpg"
     response = requests.get(url)
     return response
- 
+
 
 query_string = os.environ.get('QUERY_STRING', '')
 
@@ -42,15 +42,14 @@ if image_response and image_response.status_code == 200:
     print(f"Content-Length: {content_length}")
     print("Access-Control-Allow-Origin: *")
     print("Access-Control-Allow-Methods: GET, POST, DELETE")
-    print("Access-Control-Allow-Headers: *")
-    print()
+    print("Access-Control-Allow-Headers: *\r\n\r")
     sys.stdout.flush()
-    
+
     sys.stdout.buffer.write(image_data)
     sys.stdout.buffer.flush()
     sys.stdout.close()
 else:
     print("Content-Type: text/plain\n")
-    print("Failed to fetch the dog image.")
+    print("Failed to fetch the dog image.\r\n\r")
 
 sys.exit(0)
