@@ -44,7 +44,6 @@ std::string Serverhandler::getIp() const
 void Serverhandler::setup()
 {
 	_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-	std::cout << GREEN << "[Info]	Initializing socket " << RESET << _serverSocket << GREEN << " on " << RESET << _ip << ":" << _port << RESET << std::endl;
 	if (_serverSocket < 0)
 	{
 		std::cerr << "Error: socket creation failed" << std::endl;
@@ -82,6 +81,9 @@ void Serverhandler::setup()
 		close(_serverSocket);
 		return;
 	}
+	std::ostringstream msg;
+	msg << "Listening on " << _ip << ":" << _port;
+	Logger::log(INFO, msg.str());
 }
 
 std::vector<Server> Serverhandler::getServers() const

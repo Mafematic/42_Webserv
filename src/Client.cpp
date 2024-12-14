@@ -12,9 +12,11 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
-	_cgi_finished = 0;
+	_cgi_finished = false;
 
-	inet_ntop(AF_INET, &(client_addr.sin_addr), _client_ip, INET_ADDRSTRLEN);
+	 char ipBuffer[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
+	_client_ip = ipBuffer;
 	_client_port = ntohs(client_addr.sin_port);
 }
 
@@ -43,7 +45,7 @@ Client	&Client::operator=(const Client &src)
 	req = src.req;
 	route = src.route;
 	_client_port = src._client_port;
-	std::strcpy(_client_ip, src._client_ip);
+	_client_ip = src._client_ip;
 	_cgi_finished = src._cgi_finished;
 	return *this;
 }
@@ -52,11 +54,11 @@ Client::~Client(){}
 
 //------------------------------------READ REQUEST------------------------------------//
 
-int	Client::readRequest()
+int	Client::readRequest(int fd)
 {
 	char buffer[BUFFER_SIZE];
 
-	ssize_t bytesRead = read(clientFd, buffer, BUFFER_SIZE);
+	ssize_t bytesRead = read(fd, buffer, BUFFER_SIZE);
 	if (bytesRead < 0)
 		return READ_ERROR;
 	else if (bytesRead == 0)
@@ -254,8 +256,8 @@ Server Client::getServer()
 
 void Client::generateResponse()
 {
-    this->response = RequestRouter::route(req, server);
-    _responselength = response.length();
+	this->response = RequestRouter::route(req, server);
+	_responselength = response.length();
 }
 
 void	Client::setResponse(std::string set_response)

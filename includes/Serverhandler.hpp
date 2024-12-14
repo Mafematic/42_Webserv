@@ -2,6 +2,7 @@
 #define SERVERHANDLER_HPP
 
 #include "webserv.hpp"
+#include "Logger.hpp"
 #include "Server.hpp"
 
 class Serverhandler

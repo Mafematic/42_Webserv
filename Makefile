@@ -6,7 +6,8 @@ FILES =	main \
 			Route \
 			Server \
 			Serverhandler \
-			ServerManager
+			ServerManager \
+			Logger
 FILES_PARSER =	Config_Parser \
 				Server_Parser \
 				Location_Parser \

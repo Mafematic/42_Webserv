@@ -16,6 +16,7 @@ class Client
 		Serverhandler	handler;
 
 		std::string			response;
+		size_t				_responselength;
 		size_t				_responseSentBytes;
 
 		bool				_isChunked;
@@ -35,11 +36,9 @@ class Client
 		bool	_cgi_finished;
 
 		int					_client_port;
-		char				_client_ip[INET_ADDRSTRLEN];
+		std::string			_client_ip;
 
 	public:
-			size_t				_responselength;
-
 		Client();
 		Client(int clientFd, Serverhandler handler, struct sockaddr_in client_addr);
 		Client(const Client &src);
@@ -52,7 +51,7 @@ class Client
 		int		getFd();
 		void	updateLastActivity();
 
-		int		readRequest();
+		int		readRequest(int fd);
 		bool	requestComplete();
 		void	clearRequest();
 		void	getContentLength();
@@ -82,8 +81,6 @@ class Client
 
 		bool	getCGIfinished();
 		void	setCGIfinished(bool status);
-
-
 };
 
 #endif
