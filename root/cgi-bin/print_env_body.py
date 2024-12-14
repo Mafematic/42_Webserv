@@ -33,8 +33,8 @@ def main():
     html_content += "</body>\n"
     html_content += "</html>\n"
     # html_content = "<html><body>HELLO WORLD!</body></html>"
-    print(f"Content-Length: {len(html_content.encode('utf-8'))}\r\n")
-    print(html_content)
+    print(f"Content-Length: {len(html_content.encode('utf-8'))}", end="\r\n\r\n")
+    print(html_content, end="")
 
 if __name__ == "__main__":
     main()

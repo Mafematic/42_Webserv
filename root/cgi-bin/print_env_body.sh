@@ -34,8 +34,7 @@ echo "Content-Type: text/html"
 echo "Access-Control-Allow-Origin: *"
 echo "Access-Control-Allow-Methods: GET, POST, DELETE"
 echo "Access-Control-Allow-Headers: *"
-echo "Content-Length: $CONTENT_LENGTH"
-echo
+echo -e -n "Content-Length: ${CONTENT_LENGTH}\r\n\r\n"
 
 # Output the HTML content
-echo "$HTML_CONTENT"
+echo -n $HTML_CONTENT
