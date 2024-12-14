@@ -30,25 +30,25 @@ html_content+="</style>"
 html_content+="</head>"
 html_content+="<body>"
 html_content+="<h1>Current Time</h1>"
-html_content+="<div class="time">"
+html_content+="<div class='time'>"
 html_content+="$current_time"
 html_content+="</div>"
-html_content+="<div class="footer">"
+html_content+="<div class='footer'>"
 html_content+="<p>Powered by Bash</p>"
 html_content+="</div>"
 html_content+="</body>"
 html_content+="</html>"
 
 # Calculate the length
-length=$(echo -n "$html_content" | wc -c) # Use -m if you need multi-byte support
+# length=$(echo -n "$html_content" | wc -c) # Use -m if you need multi-byte support
+length=$(echo -n "$html_content" | wc -m)
 
 echo "HTTP/1.1 200 OK"
 echo "Content-Type: text/html"
 echo "Access-Control-Allow-Origin: *"
 echo "Access-Control-Allow-Methods: GET, POST, DELETE"
 echo "Access-Control-Allow-Headers: *"
-echo "Access-Control-Allow-Headers: *"
-echo "Content-Length: $length"
+echo -e -n "Content-Length: ${length}\r\n\r\n"
 # echo "Content-Length: 500"
-echo
-echo $html_content
+# echo $html_content
+echo -n $html_content
