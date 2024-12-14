@@ -13,7 +13,6 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_contentLength = 0;
 	_bytesReceived = 0;
 	_cgi_finished = false;
-	_cgi = false;
 
 	 char ipBuffer[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
@@ -48,7 +47,6 @@ Client	&Client::operator=(const Client &src)
 	_client_port = src._client_port;
 	_client_ip = src._client_ip;
 	_cgi_finished = src._cgi_finished;
-	_cgi = src._cgi;
 	return *this;
 }
 
@@ -78,12 +76,6 @@ int	Client::readRequest(int fd)
 
 bool	Client::requestComplete()
 {
-	if (_cgi)
-	{
-		if (_cgi_finished == true)
-			return true;
-		return false;
-	}
 	if (_isChunked)
 		return false;
 	if (_buffer.find("\r\n\r\n") != std::string::npos)
@@ -318,14 +310,4 @@ bool	Client::getCGIfinished()
 void	Client::setCGIfinished(bool status)
 {
 	this->_cgi_finished = status;
-}
-
-bool	Client::getCgi()
-{
-	return _cgi;
-}
-
-void	Client::setCGI(bool status)
-{
-	this->_cgi = status;
 }

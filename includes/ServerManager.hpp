@@ -21,7 +21,7 @@ class ServerManager
 		void run();
 		void	handleClientRequest(Client &client, std::vector<Server> servers);
 		void	handleClientResponse(Client &client);
-		void	handleCGI(Client &client, int cgi_fd);
+		void	handleCGI();
 		Server	getServer(std::vector<Server> servers, Request req);
 		void	closeConnection(Client &client, std::string reason);
 

@@ -34,8 +34,6 @@ class Client
 
 		//struct sockaddr_in	client_addr;
 		bool	_cgi_finished;
-		bool	_cgi;
-
 
 		int					_client_port;
 		std::string			_client_ip;
@@ -83,10 +81,6 @@ class Client
 
 		bool	getCGIfinished();
 		void	setCGIfinished(bool status);
-		bool	getCgi();
-		void	setCGI(bool status);
-
-
 };
 
 #endif
