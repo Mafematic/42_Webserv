@@ -33,6 +33,8 @@ std::string int_to_string(int number);
 void	print_n_newlines(uint n);
 void	replace_all(std::string &str, std::string search_for,
 			std::string replace_with);
+bool directory_is_writable(const std::string &path);
+
 
 // template functions
 template <typename Container> void print_container(const Container &container,
