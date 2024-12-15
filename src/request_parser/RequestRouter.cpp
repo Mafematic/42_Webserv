@@ -7,7 +7,7 @@
 #include <fstream>     // For std::ifstream
 #include <string>
 
-// Check for uploaded content --> html, jpeg 
+// Check for uploaded content --> html, jpeg
 // Check permission for delete --> only one folder
 // Cleaning
 
@@ -49,14 +49,14 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 
 	html << "<!DOCTYPE html><html><head><title>Index of " << requestPath << "</title></head><body>";
 	html << "<h1>Index of " << requestPath << "</h1><ul>";
-	
-	std::cout << "++++ Request path: " << requestPath << std::endl;
-	std::cout << "++++ Directory path: " << directoryPath << std::endl;
+
+	//std::cout << "++++ Request path: " << requestPath << std::endl;
+	//std::cout << "++++ Directory path: " << directoryPath << std::endl;
 
 	DIR *dir = opendir(directoryPath.c_str());
 	if (dir)
 	{
-		std::cout << "+++in here3" << std::endl; 
+		//std::cout << "+++in here3" << std::endl;
 		struct dirent *entry;
 		while ((entry = readdir(dir)) != NULL)
 		{
@@ -71,7 +71,7 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 				linkPath += "/";
 			}
 			linkPath += entry->d_name;
-			std::cout << "++++ Linkpath: " << linkPath << std::endl;
+			//std::cout << "++++ Linkpath: " << linkPath << std::endl;
 
 			html << "<li><a href=\"" << linkPath << "\">" << entry->d_name << "</a></li>";
 		}
@@ -141,11 +141,11 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	}
 	filepath += path;
 
-	std::cout << "++++ rootPath: " << rootPath << std::endl;
-	std::cout << "++++ Path: " << req.getPath() << std::endl;
-	std::cout << "++++ Final Filepath: " << filepath << std::endl;
-    std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
-    std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
+	// std::cout << "++++ rootPath: " << rootPath << std::endl;
+	// std::cout << "++++ Path: " << req.getPath() << std::endl;
+	// std::cout << "++++ Final Filepath: " << filepath << std::endl;
+    // std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
+    // std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
 
     // Test #1
 	if (!req.isValid()) // Early exit for invalid requests
@@ -164,8 +164,8 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
-		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl; 
-		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl; 
+		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl;
+		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl;
 
 		uint maxBodySize = server.get_client_max_body_size();
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
@@ -189,7 +189,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			std::string redirectPage = getCustomErrorPage(rootPath, route, 303, server);
     		return _serveFile(redirectPage, 303, req);
 		}
-		// Test #6 
+		// Test #6
 		customError = getCustomErrorPage(rootPath, route, 500, server);
         return _serveFile(customError, 500, req); // Internal server error
 	}
@@ -210,7 +210,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 					}
 					indexFilepath += *it;
 
-					std::cout << "++++ indexFile: " << indexFilepath << std::endl;
+					//std::cout << "++++ indexFile: " << indexFilepath << std::endl;
 
 					if (util::fileExists(indexFilepath))
 					{

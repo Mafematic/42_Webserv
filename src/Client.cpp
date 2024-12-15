@@ -2,7 +2,7 @@
 #include "RequestRouter.hpp"
 
 
-Client::Client(){}
+Client::Client() {}
 
 Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_addr) : clientFd(clientFd), lastActivity(time(NULL)), handler(handler)
 {
@@ -12,8 +12,10 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_currentChunkSize = 0;
 	_contentLength = 0;
 	_bytesReceived = 0;
+	_cgi = false;
+	_cgi_finished = false;
 
-	 char ipBuffer[INET_ADDRSTRLEN];
+	char ipBuffer[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
 	_client_ip = ipBuffer;
 	_client_port = ntohs(client_addr.sin_port);
@@ -45,6 +47,8 @@ Client	&Client::operator=(const Client &src)
 	route = src.route;
 	_client_port = src._client_port;
 	_client_ip = src._client_ip;
+	_cgi = src._cgi;
+	_cgi_finished = src._cgi_finished;
 	return *this;
 }
 
@@ -183,6 +187,8 @@ void	Client::clearResponse()
 {
 	_responseSentBytes = 0;
 	_responselength = 0;
+	_cgi = false;
+	_cgi_finished = false;
 	response.clear();
 }
 
@@ -211,6 +217,11 @@ void	Client::updateLastActivity()
 std::string	Client::getRequestStr()
 {
 	return _buffer;
+}
+
+void	Client::appendToRequestStr(std::string str, int bytes)
+{
+	_buffer.append(str, bytes);
 }
 
 void Client::clearBuffer()
@@ -260,7 +271,7 @@ Server Client::getServer()
 void Client::generateResponse()
 {
 	this->response = RequestRouter::route(req, server);
-	std::cout << "Response " << this->response << std::endl;
+	//std::cout << "Response " << this->response << std::endl;
 	_responselength = response.length();
 }
 
@@ -314,4 +325,33 @@ bool	Client::getCGIfinished()
 void	Client::setCGIfinished(bool status)
 {
 	this->_cgi_finished = status;
+}
+
+bool	Client::getCGI()
+{
+	return _cgi;
+}
+
+void	Client::setCGI(bool status)
+{
+	this->_cgi = status;
+}
+
+std::string	Client::getPrintName()
+{
+	struct sockaddr_in server_addr;
+	socklen_t addr_len = sizeof(server_addr);
+
+	if (getsockname(clientFd, (struct sockaddr *)&server_addr, &addr_len) < 0)
+	{
+		perror("getsockname failed");
+		close(clientFd);
+	}
+	char server_ip[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(server_addr.sin_addr), server_ip, INET_ADDRSTRLEN);
+	int server_port = ntohs(server_addr.sin_port);
+
+	std::ostringstream ss;
+	ss << "	" << server_ip << ":" << server_port;
+	return ss.str();
 }

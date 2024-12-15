@@ -30,10 +30,9 @@ class Client
 		Server	server;
 		Request	req;
 		Route route;
-		// check_header_received()
 
-		//struct sockaddr_in	client_addr;
 		bool	_cgi_finished;
+		bool	_cgi;
 
 		int					_client_port;
 		std::string			_client_ip;
@@ -61,7 +60,6 @@ class Client
 		int		sendResponse();
 		void	clearResponse();
 
-		std::string getRequestStr();
 		void clearBuffer();
 		void setChunked(bool isChunked);
 		bool isChunked();
@@ -72,6 +70,8 @@ class Client
 		std::string	getResponse();
 
 		void	setRequest();
+		std::string	getRequestStr();
+		void		appendToRequestStr(std::string str, int bytesread);
 		Request	getRequest();
 
 		int		getPort();
@@ -81,6 +81,10 @@ class Client
 
 		bool	getCGIfinished();
 		void	setCGIfinished(bool status);
+		bool	getCGI();
+		void	setCGI(bool status);
+
+		std::string	getPrintName();
 };
 
 #endif

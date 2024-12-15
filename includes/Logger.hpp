@@ -5,7 +5,7 @@
 
 class Logger {
 	public:
-		static void log(LogLevel level, const std::string& message, const std::string& method);
+		static void log(LogLevel level, const std::string& message, const std::string& method, std::string name);
 
 	private:
 		static std::string getTimestamp();

@@ -1,19 +1,18 @@
 #include "Logger.hpp"
 
-void Logger::log(LogLevel lvl, const std::string& msg, const std::string& method)
+void Logger::log(LogLevel lvl, const std::string& msg, const std::string& method, std::string name)
 {
 	std::string levelStr = logLevelToString(lvl); // Call static functions directly
 	std::string timestamp = getTimestamp();
 	std::string colorcode = getColor(lvl);
 
 	std::ostringstream logStream;
-	logStream << "[" << timestamp << "] " << colorcode;
+	logStream << "[" << timestamp << "] " << colorcode << "[" << levelStr << "] ";
 
 	if (lvl == TRACE && method != "")
-		logStream << "[Request: " << method << "] ";
+		logStream << "[" << method << " Request] ";
 
-	logStream << "[" << levelStr << "] "
-			<< msg << RESET;
+	logStream << msg << RESET << name;
 
 	std::cout << logStream.str() << std::endl;
 }

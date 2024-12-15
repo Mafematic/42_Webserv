@@ -68,7 +68,7 @@ void Cgi_Executor::start_cgi()
 {
 	this->body = this->_corresponding_request.getBody();
 	this->analyse_path();
-	std::cerr << this->_path_analyser;
+	//std::cerr << this->_path_analyser;
 	this->init_env_map();
 	this->add_http_headers_to_env_map();
 	this->env_map_to_env_arr();
@@ -130,7 +130,7 @@ void Cgi_Executor::init_env_map()
 	this->env_map["SERVER_PORT"] = util::int_to_string(this->_corresponding_server.get_port());
 	this->env_map["SERVER_PROTOCOL"] = "HTTP/1.1";
 	this->env_map["SERVER_SOFTWARE"] = "socket_squad_404/1.0";
-	std::cerr << this->_corresponding_server.get_final_root(this->_corresponding_route);
+	//std::cerr << this->_corresponding_server.get_final_root(this->_corresponding_route);
 }
 
 void Cgi_Executor::analyse_path()
@@ -212,11 +212,11 @@ void Cgi_Executor::create_argv_arr()
 
 void Cgi_Executor::run_script()
 {
-	util::print_n_newlines(3);
-	std::cerr << this->argv_arr[0] << std::endl;
-	std::cerr << this->argv_arr[1] << std::endl;
-	util::print_n_newlines(3);
-	std::cout << std::flush;
+	// util::print_n_newlines(3);
+	// std::cerr << this->argv_arr[0] << std::endl;
+	// std::cerr << this->argv_arr[1] << std::endl;
+	// util::print_n_newlines(3);
+	// std::cout << std::flush;
 	execve(this->argv_arr[0], this->argv_arr, this->env_arr);
 	exit(12);
 	// throw(CgiExecutorSystemFunctionFailed("execve"));
