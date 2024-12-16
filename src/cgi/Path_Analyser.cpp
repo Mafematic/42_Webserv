@@ -50,27 +50,40 @@ Path_Analyser::~Path_Analyser(void)
 
 void Path_Analyser::analyse(std::string path, std::string root)
 {
-
 	this->path_to_process = path;
 	this->original_path_to_process = path;
 	this->extract_query_string();
 	this->find_first_dot();
 	this->find_first_slash_after_dot();
-	this->script_extension = this->path_to_process.substr(this->_pos_dot + 1, this->_pos_slash
-			- this->_pos_dot - 1);
-	this->script_path = this->path_to_process.substr(0, this->_pos_slash);
+	this->find_first_slash_before_dot();
+	this->script_extension = this->path_to_process.substr(this->_pos_dot + 1,
+			this->_pos_slash_after_dot - this->_pos_dot - 1);
+	this->script_path = this->path_to_process.substr(0,
+			this->_pos_slash_after_dot);
 	this->path_translated = root + this->script_path;
-    util::replace_all(this->path_translated, "//", "/");
-	this->path_info = this->path_to_process.substr(this->_pos_slash);
+	this->path_translated_folder = root + this->path_to_process.substr(0,
+			this->_pos_slash_before_dot);
+	util::replace_all(this->path_translated, "//", "/");
+	util::replace_all(this->path_translated_folder, "//", "/");
+	this->path_info = this->path_to_process.substr(this->_pos_slash_after_dot);
 	this->_pos_script_start = this->script_path.rfind("/");
 	this->script_name = this->script_path.substr(this->_pos_script_start + 1);
 }
 
 void Path_Analyser::find_first_slash_after_dot()
 {
-	this->_pos_slash = this->path_to_process.find("/", this->_pos_dot);
-	if (this->_pos_slash == std::string::npos)
-		this->_pos_slash = this->path_to_process.length();
+	this->_pos_slash_after_dot = this->path_to_process.find("/",
+			this->_pos_dot);
+	if (this->_pos_slash_after_dot == std::string::npos)
+		this->_pos_slash_after_dot = this->path_to_process.length();
+}
+
+void Path_Analyser::find_first_slash_before_dot()
+{
+	this->_pos_slash_before_dot = this->path_to_process.rfind("/",
+			this->_pos_dot);
+	if (this->_pos_slash_before_dot == std::string::npos)
+		this->_pos_slash_before_dot = 0;
 }
 
 void Path_Analyser::find_first_dot()
@@ -80,7 +93,7 @@ void Path_Analyser::find_first_dot()
 	{
 		if (this->path_to_process[this->path_to_process.length() - 1] != '/')
 			this->path_to_process += "/";
-		this->path_to_process += "index.py";
+		this->path_to_process += "time.py";
 		this->_pos_dot = this->path_to_process.find(".");
 	}
 }
@@ -106,6 +119,7 @@ std::ostream &operator<<(std::ostream &os, Path_Analyser const &path_analyser)
 	std::cout << "script_name : " << path_analyser.script_name << std::endl;
 	std::cout << "script_path : " << path_analyser.script_path << std::endl;
 	std::cout << "path_translated : " << path_analyser.path_translated << std::endl;
+	std::cout << "path_translated_folder : " << path_analyser.path_translated_folder << std::endl;
 	std::cout << "script_extension : " << path_analyser.script_extension << std::endl;
 	std::cout << "path_info : " << path_analyser.path_info << std::endl;
 	std::cout << "query_string : " << path_analyser.query_string << std::endl;

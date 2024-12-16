@@ -176,6 +176,11 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 
 		FileUploader uploader(req);
+		if (!util::directory_is_writable("./uploads"))
+		{
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
+		}
 		if (uploader.isMalformed())
 		{
 			// Test #4
@@ -253,20 +258,15 @@ std::string RequestRouter::route(Request &req, const Server &server)
 					}
 				}
 			}
-
-			// No index found, return a 404 error
 			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
 		else
 		{
-			// Handle other paths using the constructed filepath
 			if (util::fileExists(filepath))
 			{
 				return _serveFile(filepath, 200, req);
 			}
-
-			// File or directory not found, return a 404 error
 			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
@@ -277,11 +277,24 @@ std::string RequestRouter::route(Request &req, const Server &server)
     	std::string relativePath = req.getPath();
     	if (!relativePath.empty() && relativePath[0] == '/')
 		{
-        	relativePath = relativePath.substr(1); // Remove the leading slash
+        	relativePath = relativePath.substr(1);
     	}
 
-		std::string fullFilePath = "./" + relativePath;
+		if (relativePath.find("uploads/") != 0)
+		{
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
+		}
 
+		std::string fullFilePath = "./" + relativePath;
+		std::cout << "+++ Full File Path: " << fullFilePath << std::endl;
+
+		// Check if the uploads directory is writable
+		if (!util::directory_is_writable("./uploads"))
+		{
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
+		}
 		// Check if the file exists and delete it
 		if (util::fileExists(fullFilePath))
 		{

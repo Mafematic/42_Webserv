@@ -86,7 +86,7 @@
             border-radius: 10px;
         }
 
-        #cgiBodyInputField{
+        #cgiBodyInputField {
             height: 100px;
         }
     </style>
@@ -99,15 +99,22 @@
             <button class="bonus-button" onclick="cgiPost('php');">POST -> Env Var and Body -> php</button>
             <button class="bonus-button" onclick="cgiPost('sh');">POST -> Env Var and Body -> sh</button>
             <button class="bonus-button" onclick="cgiPost('py');">POST -> Env Var and Body -> py</button>
-            <textarea id="cgiBodyInputField" name="message" placeholder="This text will get send as the body to the cgi script! If empty, a default body will be sent!"></textarea>
+            <textarea id="cgiBodyInputField" name="message"
+                placeholder="This text will get send as the body to the cgi script! If empty, a default body will be sent!"></textarea>
             <button class="bonus-button" onclick="cgiTime('php');">GET -> Time -> php</button>
             <button class="bonus-button" onclick="cgiTime('sh');">GET -> Time -> sh</button>
             <button class="bonus-button" onclick="cgiTime('py');">GET -> Time -> py</button>
             <button class="bonus-button" onclick="getAnimal('dog');">GET -> Dog Image -> py</button>
             <button class="bonus-button" onclick="getAnimal('duck');">GET -> Duck Image -> py</button>
-            <image id="dogImage" src="" alt="an Image of a dog">
+            <image id="dogImage" src="" alt="an Image of a dog" />
+            <button class="bonus-button" onclick="window.location.href='/cgi-bin/error.py'">GET -> Error Script ->
+                py</button>
+            <button class="bonus-button" onclick="window.location.href='/cgi-bin/endless.py'">GET -> Infinite Loop Script ->
+                py</button>
         </div>
     </div>
+
+
 
     <div id="content"></div>
 
