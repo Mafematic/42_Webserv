@@ -192,8 +192,8 @@ void	ServerManager::checkForCGI()
 		{
 			Logger::log(DEBUG, "[CGI] Child finished : ready to send response", "", client.getPrintName());
 			client.setCGIfinished(true);
-			cgi_controllers.erase(it->first);
 			close(it->first);
+			cgi_controllers.erase(it->first);
 			return ;
 		}
 		else if (status == CGI_KILLED_TIMEOUT)
