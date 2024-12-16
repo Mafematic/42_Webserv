@@ -224,6 +224,20 @@ bool Route::is_method_allowed(std::string method)
 	}
 	return (false);
 }
+bool Route::is_readable(const std::string &path) const
+{
+	return access(path.c_str(), R_OK) == 0;
+}
+
+bool Route::is_writable(const std::string &path) const
+{
+	return access(path.c_str(), W_OK) == 0;
+}
+
+bool Route::is_executable(const std::string &path) const
+{
+	return access(path.c_str(), X_OK) == 0;
+}
 
 std::ostream &operator<<(std::ostream &os, Route const &route)
 {

@@ -8,7 +8,6 @@
 #include <string>
 
 // Check for uploaded content --> html, jpeg 
-// Check permission for delete --> only one folder
 // Cleaning
 
 std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
@@ -133,19 +132,38 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 	}
 
+	// Remove the leading slash from path if present
+	if (!path.empty() && path[0] == '/')
+	{
+		path = path.substr(1);
+	}
+
 	// Construct the final filepath
 	std::string filepath = rootPath;
 	if (filepath[filepath.length() - 1] != '/')
 	{
 		filepath += "/";
 	}
-	filepath += path;
+	std::cout << "++++ rootPath: " << filepath << std::endl;
+	std::cout << "++++ path: " << path << std::endl;
+
+	//filepath += path;
+	filepath += req.getPath();
 
 	std::cout << "++++ rootPath: " << rootPath << std::endl;
 	std::cout << "++++ Path: " << req.getPath() << std::endl;
 	std::cout << "++++ Final Filepath: " << filepath << std::endl;
     std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
     std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
+
+	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
+	{
+		if (!route.is_readable(filepath))
+		{
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
+		}
+	}
 
     // Test #1
 	if (!req.isValid()) // Early exit for invalid requests
