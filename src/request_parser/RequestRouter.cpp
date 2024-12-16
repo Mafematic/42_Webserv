@@ -3,6 +3,7 @@
 #include "util.hpp"
 #include "webserv.hpp"
 #include "Server.hpp"
+#include "Path_Analyser.hpp"
 
 
 bool RequestRouter::valid = true;
@@ -156,7 +157,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
     std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
     std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
 
-	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
+	if (!(req.getMethod() == "POST" && req.getPath() == "/upload") && req.getPath().find("/cgi-bin/") != 0)
 	{
 		if (!route.is_readable(filepath))
 		{
@@ -222,18 +223,23 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		if (req.getPath().find("/cgi-bin/") == 0)
 		{
+			Path_Analyser pathAnalyser;
+			pathAnalyser.analyse(req.getPath(), rootPath);
+			std::string scriptFullPath = pathAnalyser.path_translated;
 			std::string cgiDir = rootPath + "/cgi-bin";
-			
+
 			// Check if the cgi-bin directory is executable
 			if (!route.is_executable(cgiDir))
 			{
+				valid = false;
 				customError = getCustomErrorPage(rootPath, route, 403, server);
 				return _serveFile(customError, 403, req);
 			}
 
 			// Check if the specific CGI file is executable
-			if (!route.is_executable(filepath))
+			if (!route.is_executable(scriptFullPath))
 			{
+				valid = false;
 				customError = getCustomErrorPage(rootPath, route, 403, server);
 				return _serveFile(customError, 403, req);
 			}
