@@ -12,11 +12,11 @@
 
 #pragma once
 #include "Client.hpp"
+#include "Path_Analyser.hpp"
 #include "Request.hpp"
 #include "Route.hpp"
 #include "Server.hpp"
 #include "webserv.hpp"
-#include "Path_Analyser.hpp"
 
 class	Cgi_Controller;
 
@@ -37,6 +37,8 @@ class Cgi_Executor
 	void create_argv_arr();
 	void analyse_path();
 	void change_to_cgi_directory();
+	void free_memory(int error);
+	void free_and_exit(int error_code);
 
 	Cgi_Controller *corresponding_controller;
 

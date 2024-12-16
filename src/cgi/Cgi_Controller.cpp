@@ -12,12 +12,14 @@
 
 #include "Cgi_Controller.hpp"
 
-Cgi_Controller::Cgi_Controller()
+Cgi_Controller::Cgi_Controller() : tmp_file_name(""), status(CGI_RUNNING),
+	tmp_file_was_deleted(false)
 {
 }
 
-Cgi_Controller::Cgi_Controller(Client client) : corresponding_client(client),
-	status(CGI_RUNNING), tmp_file_was_deleted(false)
+Cgi_Controller::Cgi_Controller(Client client) : tmp_file_name(""),
+	corresponding_client(client), status(CGI_RUNNING),
+	tmp_file_was_deleted(false)
 {
 	this->tmp_file_name = "aaa_" + this->get_random_string(32);
 	return ;
@@ -32,6 +34,7 @@ Cgi_Controller::Cgi_Controller(const Cgi_Controller &other)
 	this->tmp_file_name = other.tmp_file_name;
 	this->status = other.status;
 	this->corresponding_client = other.corresponding_client;
+	this->tmp_file_was_deleted = other.tmp_file_was_deleted;
 	return ;
 }
 
@@ -46,6 +49,7 @@ Cgi_Controller &Cgi_Controller::operator=(const Cgi_Controller &other)
 		this->tmp_file_name = other.tmp_file_name;
 		this->status = other.status;
 		this->corresponding_client = other.corresponding_client;
+		this->tmp_file_was_deleted = other.tmp_file_was_deleted;
 	}
 	return (*this);
 }
@@ -84,7 +88,8 @@ e_cgi_status Cgi_Controller::check_cgi()
 		return (this->status);
 	if (this->check_cgi_executor_timeout())
 	{
-		std::cout << "Child process timed out, getting killed..." << std::endl;
+		// std::cout << "Child process timed out,
+			// getting killed..." << std::endl;
 		if (kill(this->executor_pid_id, SIGKILL) < 0)
 			throw(CgiControllerSystemFunctionFailed("kill"));
 		this->status = CGI_KILLED_TIMEOUT;
@@ -99,7 +104,7 @@ e_cgi_status Cgi_Controller::check_cgi()
 	}
 	else if (result == this->executor_pid_id)
 	{
-		std::cout << "Child process has finished!" << std::endl;
+		// std::cout << "Child process has finished!" << std::endl;
 		this->remove_cgi_tmp_infile();
 		if (WIFEXITED(status))
 		{
@@ -107,7 +112,7 @@ e_cgi_status Cgi_Controller::check_cgi()
 				this->status = CGI_EXITED_NORMAL;
 			else
 				this->status = CGI_EXITED_ERROR;
-			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
+			// std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
 		}
 		else
 			this->status = CGI_EXITED_ERROR;
@@ -133,7 +138,7 @@ void Cgi_Controller::remove_cgi_tmp_infile()
 			throw(CgiControllerSystemFunctionFailed("remove"));
 		this->tmp_file_was_deleted = true;
 	}
-	std::cout << "CGI CONTROLLER: TMP FILE WAS DELETED!" << std::endl;
+	// std::cout << "CGI CONTROLLER: TMP FILE WAS DELETED!" << std::endl;
 }
 
 Cgi_Controller::CgiControllerSystemFunctionFailed::CgiControllerSystemFunctionFailed(std::string function_name) : _function_name(function_name)

@@ -83,7 +83,7 @@ void Serverhandler::setup()
 	}
 	std::ostringstream msg;
 	msg << "Listening on " << _ip << ":" << _port;
-	Logger::log(INFO, msg.str(), "");
+	Logger::log(INFO, msg.str(), "", "");
 }
 
 std::vector<Server> Serverhandler::getServers() const

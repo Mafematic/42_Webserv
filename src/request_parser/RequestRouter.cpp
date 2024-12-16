@@ -178,8 +178,8 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
-		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl; 
-		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl; 
+		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl;
+		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl;
 
 		uint maxBodySize = server.get_client_max_body_size();
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
@@ -208,7 +208,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			std::string redirectPage = getCustomErrorPage(rootPath, route, 303, server);
     		return _serveFile(redirectPage, 303, req);
 		}
-		// Test #6 
+		// Test #6
 		customError = getCustomErrorPage(rootPath, route, 500, server);
         return _serveFile(customError, 500, req); // Internal server error
 	}
@@ -229,7 +229,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 					}
 					indexFilepath += *it;
 
-					std::cout << "++++ indexFile: " << indexFilepath << std::endl;
+					//std::cout << "++++ indexFile: " << indexFilepath << std::endl;
 
 					if (util::fileExists(indexFilepath))
 					{
@@ -401,6 +401,9 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 			break;
 		case 503:
 			statusLine = "HTTP/1.1 503 Service Unavailable";
+			break;
+		case 504:
+			statusLine = "HTTP/1.1 504 Gateway Timeout";
 			break;
 		default:
 			statusLine = "HTTP/1.1 500 Internal Server Error";
