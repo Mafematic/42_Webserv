@@ -4,9 +4,6 @@
 #include "webserv.hpp"
 #include "Server.hpp"
 
-#include <fstream>     // For std::ifstream
-#include <string>
-
 // Check for uploaded content --> html, jpeg 
 // Cleaning
 
@@ -41,21 +38,16 @@ std::string getCustomErrorPage(const std::string &rootPath, const Route &route, 
 }
 
 
-
 std::string generateAutoindexListing(const std::string &directoryPath, const std::string &requestPath)
 {
 	std::ostringstream html;
 
 	html << "<!DOCTYPE html><html><head><title>Index of " << requestPath << "</title></head><body>";
 	html << "<h1>Index of " << requestPath << "</h1><ul>";
-	
-	std::cout << "++++ Request path: " << requestPath << std::endl;
-	std::cout << "++++ Directory path: " << directoryPath << std::endl;
 
 	DIR *dir = opendir(directoryPath.c_str());
 	if (dir)
 	{
-		std::cout << "+++in here3" << std::endl; 
 		struct dirent *entry;
 		while ((entry = readdir(dir)) != NULL)
 		{
@@ -70,8 +62,6 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 				linkPath += "/";
 			}
 			linkPath += entry->d_name;
-			std::cout << "++++ Linkpath: " << linkPath << std::endl;
-
 			html << "<li><a href=\"" << linkPath << "\">" << entry->d_name << "</a></li>";
 		}
 		closedir(dir);
@@ -79,7 +69,7 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 	else
 	{
 		html << "<p>Unable to open directory.</p>";
-		return html.str();  // Return in case of error
+		return html.str();
 	}
 
 	html << "</ul></body></html>";
@@ -92,7 +82,13 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
     if (server.get_return_is_defined())
 	{
+		std::cout << "+++ in here" << std::endl;
 		util::Return_Definition serverReturn = server.get_return();
+		std::cout << "++ return URL" << serverReturn.url << std::endl;
+		std::cout << "++ return URL" << serverReturn.status_code << std::endl;
+
+		//std::cout << "++ Response:" << _serveFile(serverReturn.url, serverReturn.status_code, req) << std::endl;
+
 		return _serveFile(serverReturn.url, serverReturn.status_code, req);
 	}
 
@@ -338,6 +334,8 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, Request &req)
 {
+	std::cout << "+++ in here 1" << std::endl;
+
     std::string content = "";
     if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
     {
@@ -357,7 +355,7 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
             content = contentOrFilepath;  // Assume it's raw HTML content
         }
     }
-
+	std::cout << "+++ in here 2" << std::endl;
 
     std::string statusLine;
     switch (statusCode)
@@ -417,13 +415,13 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 	bool isRedirect = (statusCode >= 300 && statusCode < 400);
 	if (isRedirect)
 	{
-		// Ensure the Location header contains an absolute path
 		std::string locationPath = contentOrFilepath;
-		if (locationPath[0] != '/')
+		if (locationPath.find("http://") != 0 && locationPath.find("https://") != 0 && locationPath[0] != '/')
 		{
-			locationPath = "/" + locationPath.substr(locationPath.find("default_pages"));
-    	}
-    statusLine += "\r\nLocation: " + locationPath;
+			locationPath = "/" + locationPath;
+		}
+
+		statusLine += "\r\nLocation: " + locationPath;
 	}
     if (req.getKeepAlive())
     {
@@ -434,10 +432,14 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
         statusLine += "\r\nConnection: close";
     }
     statusLine += "\r\n\r\n";
+	std::cout << "+++ statusLine1" << statusLine << std::endl;
+
     if (!(statusCode >= 300 && statusCode < 400))
 	{
 		statusLine += content;
 	}
+	std::cout << "+++ statusLine2" << statusLine << std::endl;
+
     return statusLine;
 }
 

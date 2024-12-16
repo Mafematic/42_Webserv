@@ -25,7 +25,7 @@ class Client
 
 		size_t				_contentLength;
 		size_t				_bytesReceived;
-		std::basic_string<char>			_buffer;
+		std::string			_buffer;
 
 		Server	server;
 		Request	req;
