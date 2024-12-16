@@ -18,10 +18,11 @@ std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const
 	std::map<std::string, std::vector<std::string> > routeErrorPages = route.get_error_pages();
 	if (routeErrorPages.count(code))
 	{
-		std::string errorPagePath = route.get_location() + routeErrorPages[code][0];
-		if (util::fileExists(rootPath + errorPagePath))
+		std::cout << "in here" << std::endl;
+		std::string errorPagePath = routeErrorPages[code][0];
+		if (util::fileExists(rootPath + "/" + errorPagePath))
 		{
-			return rootPath + errorPagePath;
+			return rootPath + "/" + errorPagePath;
 		}
 	}
 
@@ -29,10 +30,19 @@ std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const
 	std::map<std::string, std::vector<std::string> > serverErrorPages = server.get_error_pages();
 	if (serverErrorPages.count(code))
 	{
+		std::cout << "in here2" << std::endl;
+
 		std::string errorPagePath = serverErrorPages[code][0];
-		if (util::fileExists(rootPath + errorPagePath))
+		std::string serverRoot = server.get_root();
+
+		if (errorPagePath[0] == '/')
 		{
-			return rootPath + errorPagePath;
+			errorPagePath = errorPagePath.substr(1);
+		}
+
+		if (util::fileExists(serverRoot + "/" + errorPagePath))
+		{
+			return serverRoot + "/" + errorPagePath;
 		}
 	}
 
@@ -87,11 +97,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
     if (server.get_return_is_defined())
 	{
 		util::Return_Definition serverReturn = server.get_return();
-		std::cout << "++ return URL" << serverReturn.url << std::endl;
-		std::cout << "++ return URL" << serverReturn.status_code << std::endl;
-
-		//std::cout << "++ Response:" << _serveFile(serverReturn.url, serverReturn.status_code, req) << std::endl;
-
 		return _serveFile(serverReturn.url, serverReturn.status_code, req);
 	}
 
@@ -258,7 +263,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 					}
 				}
 			}
-
 			// If autoindex is enabled in the route, generate directory listing
 			if (route.get_autoindex() && util::directoryExists(filepath))
 			{
@@ -279,9 +283,20 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 			if (!indices.empty())
 			{
+				std::cout << "++++ In here4" << std::endl;
+				// Print the indices
+				std::cout << "++++ Indices: ";
 				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
 				{
-					std::string indexFilepath = filepath;
+					std::cout << *it << " ";
+				}
+				std::cout << std::endl;
+
+				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
+				{
+					std::string indexFilepath = rootPath;
+					//std::cout << "Here: " << rootPath << " ";
+					//std::cout << "Here: " << filepath << " ";
 					if (indexFilepath[indexFilepath.length() - 1] != '/')
 					{
 						indexFilepath += "/";

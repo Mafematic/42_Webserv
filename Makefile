@@ -1,6 +1,6 @@
 NAME	= webserv
 CC		= c++ -g
-CFLAGS	= -Wall -Werror -Wextra -std=c++98
+CFLAGS	= -Wall -Werror -Wextra #-std=c++98
 FILES =	main \
 			Client \
 			Route \

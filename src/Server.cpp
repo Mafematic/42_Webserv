@@ -6,7 +6,7 @@ Server::Server() : _root("./"), _autoindex(false), _client_max_body_size(1024
 {
 	this->set_listen(4000, "0.0.0.0");
 	//this->_index.push_back("index.html");
-	this->_error_pages["404"].push_back("404.html");
+	//this->_error_pages["404"].push_back("404.html");
 	return ;
 }
 
