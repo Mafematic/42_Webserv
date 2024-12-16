@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 		signal(SIGINT, signalHandler);
 		ServerManager	manager;
 
-		Logger::log(INFO, "Accessing config-file: " + config_file, "", "");
+		Logger::log(INFO, "Accessing config-file: " + config_file, "", "", -1);
 		manager.setup(config_file);
 		manager.run();
 	}

@@ -46,7 +46,6 @@ enum	State
 	SEND_COMPLETE = 2
 };
 
-
 #include <iostream>
 #include <string>
 #include <fstream>

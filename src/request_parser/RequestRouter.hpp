@@ -9,13 +9,13 @@
 class RequestRouter
 {
 public:
+    static bool valid;
     // Route a validated Request and return an appropriate HTTP response
     static std::string route(Request &request, const Server &server);
     static Route _getRoute(const Server &server, Request &req);
-
-private:
-
+    static std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server);
     static std::string _serveFile(const std::string &filepath, int statusCode, Request &req);
+private:
 
 
 };

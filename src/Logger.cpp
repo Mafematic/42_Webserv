@@ -1,6 +1,6 @@
 #include "Logger.hpp"
 
-void Logger::log(LogLevel lvl, const std::string& msg, const std::string& method, std::string name)
+void Logger::log(LogLevel lvl, const std::string& msg, const std::string& method, std::string name, int fd)
 {
 	std::string levelStr = logLevelToString(lvl); // Call static functions directly
 	std::string timestamp = getTimestamp();
@@ -10,6 +10,8 @@ void Logger::log(LogLevel lvl, const std::string& msg, const std::string& method
 	logStream << "[" << timestamp << "] ";
 	if (name != "")
 		logStream << "[" << name << "] ";
+	if (fd != -1)
+		logStream << "[" << fd << "] ";
 	logStream << colorcode << "[" << levelStr << "] ";
 
 	if (lvl == TRACE && method != "")

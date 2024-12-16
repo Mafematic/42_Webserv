@@ -9,7 +9,7 @@ void ServerManager::setup(std::string config_path)
 	Config_Parser parser(config_path);
 	_server_config = parser.parse_config();
 
-	Logger::log(INFO, "Configuration file parsed", "", "");
+	Logger::log(INFO, "Configuration file parsed", "", "", -1);
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
 		for (std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
@@ -19,7 +19,7 @@ void ServerManager::setup(std::string config_path)
 			{
 				tmp_it->addServer(*it);
 				duplicate_flag = true;
-				Logger::log(WARNING, "[Serverduplicat detected]	added to existing socket: " + util::to_string(tmp_it->getSocket()), "", "");
+				Logger::log(WARNING, "[Serverduplicat detected]	added to existing socket: " + util::to_string(tmp_it->getSocket()), "", "", -1);
 				break ;
 			}
 		}
@@ -51,21 +51,21 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	client.setServer(servers);
 	client.setRoute(client.getServer());
 	currentRoute = client.getRoute();
-	Logger::log(TRACE, "Request read", client.getRequest().getMethod() + " " + client.getRequest().getPath(), client.getPrintName());
+	Logger::log(TRACE, "Request read", client.getRequest().getMethod() + " " + client.getRequest().getPath(), client.getPrintName(), client.getFd());
 
+	client.generateResponse();
+	std::cout << RequestRouter::valid << std::endl;
 	if (currentRoute.get_location() == "/cgi-bin/")
 	{
 		acceptNewCGIConnection(client.getFd());
 		client.updateLastActivity();
 		client.clearRequest();
 		client.setCGI(true);
-		Logger::log(DEBUG, "CGI Request : CGI initialized and running", "", client.getPrintName());
+		Logger::log(DEBUG, "CGI Request : CGI initialized and running", "", client.getPrintName(), client.getFd());
 		return ;
 	}
-
-	client.generateResponse();
 	client.updateLastActivity();
-	Logger::log(DEBUG, "Request proccesed - ready to send response", "", client.getPrintName());
+	Logger::log(DEBUG, "Request proccesed - ready to send response", "", client.getPrintName(), client.getFd());
 }
 
 void ServerManager::handleClientResponse(Client &client)
@@ -76,7 +76,7 @@ void ServerManager::handleClientResponse(Client &client)
 	{
 		if (!client.getCGIfinished())
 			return ;
-		Logger::log(DEBUG, "CGI process finished and response ready", "", client.getPrintName());
+		Logger::log(DEBUG, "CGI process finished and response ready", "", client.getPrintName(), client.getFd());
 	}
 
 	close = 0;
@@ -89,7 +89,7 @@ void ServerManager::handleClientResponse(Client &client)
 		return (closeConnection(client, "[Failed to send response]"));
 	else if (status == SEND_NOT_COMPLETE)
 		return ;
-	Logger::log(TRACE, "Response send", "", client.getPrintName());
+	Logger::log(TRACE, "Response send", "", client.getPrintName(), client.getFd());
 	if (close == 1)
 		return (closeConnection(client, "[Header -> Connection: close]"));
 	client.clearRequest();
@@ -103,18 +103,18 @@ void	ServerManager::handleCGI()
 	int status = client.readRequest(_eventFd);
 	if (status == READ_ERROR)
 	{
-		Logger::log(ERROR, "[CGI] Reading from cgi-pipe : clean up ", "", client.getPrintName());
+		Logger::log(ERROR, "[CGI] Reading from cgi-pipe : clean up ", "", client.getPrintName(), client.getFd());
 		client.setCGIfinished(false);
-		close(_eventFd);
+		//close(_eventFd);
 		epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
-		cgi_controllers.erase(_eventFd);
+		//cgi_controllers.erase(_eventFd);
 	}
 	else if (status == READ_NOT_COMPLETE)
 		return ;
 	else
 	{
 		client.setResponse(client.getRequestStr());
-		Logger::log(DEBUG, "[CGI] read from pipe : waiting for child to finish", "", client.getPrintName());
+		Logger::log(DEBUG, "[CGI] read from pipe : waiting for child to finish", "", client.getPrintName(), client.getFd());
 	}
 }
 
@@ -141,7 +141,7 @@ void ServerManager::run()
 	{
 		return ;
 	}
-	Logger::log(INFO, "Servermanager is running", "", "");
+	Logger::log(INFO, "Servermanager is running", "", "", -1);
 	while (g_running)
 	{
 		eventCount = epoll_wait(_epollFd, events, MAX_EVENTS, EPOLL_TIMEOUT);
@@ -190,7 +190,7 @@ void	ServerManager::checkForCGI()
 
 		if (status == CGI_EXITED_NORMAL)
 		{
-			Logger::log(DEBUG, "[CGI] Child finished : ready to send response", "", client.getPrintName());
+			Logger::log(DEBUG, "[CGI] Child finished : ready to send response", "", client.getPrintName(), client.getFd());
 			client.setCGIfinished(true);
 			close(it->first);
 			cgi_controllers.erase(it->first);
@@ -198,21 +198,35 @@ void	ServerManager::checkForCGI()
 		}
 		else if (status == CGI_KILLED_TIMEOUT)
 		{
-			Logger::log(WARNING, "[CGI TIMEOUT] CGI process killed due to timeout", "", client.getPrintName());
-			client.setResponse("HTTP/1.1 504 Gateway Timeout\r\nContent-Length: 0\r\n\r\n");
+			Logger::log(WARNING, "[CGI TIMEOUT] CGI process killed due to timeout", "", client.getPrintName(), client.getFd());
+			//client.setResponse("HTTP/1.1 504 Gateway Timeout\r\nContent-Length: 0\r\n\r\n");
+			client.setResponse(getCustomError(client, 504));
 			cleanUpCGI(client, it->first);
 			return;
 		}
 		else if (status == CGI_EXITED_ERROR)
 		{
-			Logger::log(ERROR, "[CGI ERROR] CGI process exited with an error", "", client.getPrintName());
-			client.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
+			Logger::log(ERROR, "[CGI ERROR] CGI process exited with an error", "", client.getPrintName(), client.getFd());
+			//client.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
+			client.setResponse(getCustomError(client, 500));
 			cleanUpCGI(client, it->first);
 			return;
 		}
 
 		++it;
 	}
+}
+
+std::string ServerManager::getCustomError(Client client, int error)
+{
+	std::string customError;
+	Route route = client.getRoute();
+	Server server = client.getServer();
+	Request req = client.getRequest();
+
+
+	customError = RequestRouter::getCustomErrorPage(server.get_final_root(route), route, error, server);
+	return RequestRouter::_serveFile(customError, error, req);
 }
 
 void ServerManager::checkTimeout()
@@ -235,7 +249,7 @@ void ServerManager::checkTimeout()
 void ServerManager::closeConnection(Client &client, std::string reason)
 {
 	//std::cout << YELLOW << reason << " Client disconnected : ClientFd " << client.getFd() << RESET << std::endl;
-	Logger::log(DEBUG, reason + " Client disconnected", "", client.getPrintName());
+	Logger::log(DEBUG, reason + " Client disconnected", "", client.getPrintName(), client.getFd());
 	client.clearRequest();
 	client.clearResponse();
 	close(client.getFd());
@@ -265,7 +279,7 @@ void	ServerManager::acceptNewCGIConnection(int clientFD)
 	_ev.data.fd = cgi_fd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, cgi_fd, &_ev) == -1)
 	{
-		Logger::log(ERROR, "Failed to add cgi-pipe to socket", "", client.getPrintName());
+		Logger::log(ERROR, "Failed to add cgi-pipe to socket", "", client.getPrintName(), client.getFd());
 		close(cgi_fd);
 		return ;
 	}
@@ -288,16 +302,16 @@ void ServerManager::acceptNewConnection(Serverhandler handler)
 		_ev.data.fd = clientSocket;
 		if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientSocket, &_ev) == -1)
 		{
-			Logger::log(ERROR, "Fialed to add client to socket", "", "");
+			Logger::log(ERROR, "Fialed to add client to socket", "", "", -1);
 			close(clientSocket);
 			return ;
 		}
 		Client new_client(clientSocket, handler, client_addr);
 		_clients[clientSocket] = new_client;
-		Logger::log(INFO, "Accpeted new client-connection", "", new_client.getPrintName());
+		Logger::log(INFO, "Accpeted new client-connection", "", new_client.getPrintName(), new_client.getFd());
 	}
 	else
-		Logger::log(ERROR, "Failed to accept new client-connection", "", "");
+		Logger::log(ERROR, "Failed to accept new client-connection", "", "", -1);
 }
 
 void ServerManager::setNonBlocking(int socketFd)
@@ -307,10 +321,10 @@ void ServerManager::setNonBlocking(int socketFd)
 	// Get the current flags on the socket
 	flags = fcntl(socketFd, F_GETFL, 0);
 	if (flags == -1)
-		return Logger::log(ERROR, "Failed to set socket to non-blocking mode.", "", "");
+		return Logger::log(ERROR, "Failed to set socket to non-blocking mode.", "", "", -1);
 	// Set the socket to non-blocking by adding O_NONBLOCK to its flags
 	if (fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) == -1)
-		return Logger::log(ERROR, "Failed to set socket to non-blocking mode.", "", "");
+		return Logger::log(ERROR, "Failed to set socket to non-blocking mode.", "", "", -1);
 }
 
 //-------------------------------------------------EPOLL-------------------------------------------------//
@@ -320,7 +334,7 @@ int ServerManager::createEpoll()
 	_epollFd = epoll_create1(0);
 	if (_epollFd == -1)
 	{
-		Logger::log(ERROR, "Failed to create epoll.", "", "");
+		Logger::log(ERROR, "Failed to create epoll.", "", "", -1);
 		return (-1);
 	}
 	return (1);
@@ -345,7 +359,7 @@ int ServerManager::epollAddSockets()
 			std::cerr << "Error: epoll_ctl failed for server socket (fd: " << serverSocket << "). Error: " << strerror(errno) << std::endl;
 			return (-1);
 		}
-		Logger::log(INFO, "Socket added to epoll", "", "");
+		Logger::log(INFO, "Socket added to epoll", "", "", -1);
 	}
 	// std::cout << GREEN << "[Info]	All server sockets added to epoll" << RESET << std::endl;
 	return (1);

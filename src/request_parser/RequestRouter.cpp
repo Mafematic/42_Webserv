@@ -4,10 +4,12 @@
 #include "webserv.hpp"
 #include "Server.hpp"
 
-// Check for uploaded content --> html, jpeg 
+
+bool RequestRouter::valid = true;
+// Check for uploaded content --> html, jpeg
 // Cleaning
 
-std::string getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
+std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
 {
 	std::string code = util::to_string(statusCode);
 
@@ -78,6 +80,7 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 
 std::string RequestRouter::route(Request &req, const Server &server)
 {
+	valid = true;
 	std::string customError;
 
     if (server.get_return_is_defined())
@@ -110,6 +113,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
     if (!route.is_method_allowed(method))
 	{
+		valid = false;
         customError = getCustomErrorPage(rootPath, route, 405, server);
         return _serveFile(customError, 405, req);
     }
@@ -156,6 +160,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		if (!route.is_readable(filepath))
 		{
+			valid = false;
 			customError = getCustomErrorPage(rootPath, route, 403, server);
 			return _serveFile(customError, 403, req);
 		}

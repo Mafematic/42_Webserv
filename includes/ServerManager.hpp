@@ -44,6 +44,8 @@ class ServerManager
 		void	setNonBlocking(int clientSocket);
 		void	checkTimeout();
 		void	checkForCGI();
+
+		std::string	getCustomError(Client client, int error);
 };
 
 #endif
