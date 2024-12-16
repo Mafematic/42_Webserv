@@ -53,6 +53,10 @@ class Route
 									std::vector<std::string> > new_val);
 
 	bool is_method_allowed(std::string method);
+	bool is_readable(const std::string &path) const;
+	bool is_writable(const std::string &path) const;
+	bool is_executable(const std::string &path) const;
+
 
   private:
 	std::string _location;
