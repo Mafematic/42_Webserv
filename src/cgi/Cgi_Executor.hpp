@@ -36,6 +36,7 @@ class Cgi_Executor
 	void env_map_to_env_arr();
 	void create_argv_arr();
 	void analyse_path();
+	void change_to_cgi_directory();
 
 	Cgi_Controller *corresponding_controller;
 

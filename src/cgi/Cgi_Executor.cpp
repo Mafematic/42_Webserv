@@ -68,6 +68,8 @@ void Cgi_Executor::start_cgi()
 {
 	this->body = this->_corresponding_request.getBody();
 	this->analyse_path();
+	std::cout << "HERE" << std::endl;
+	std::cout << this->_path_analyser;
 	std::cerr << this->_path_analyser;
 	this->init_env_map();
 	this->add_http_headers_to_env_map();
@@ -81,6 +83,7 @@ void Cgi_Executor::start_cgi()
 		throw(CgiExecutorSystemFunctionFailed("close"));
 	if (close(this->corresponding_controller->pipe_receive_cgi_answer[0]) < 0)
 		throw(CgiExecutorSystemFunctionFailed("close"));
+	this->change_to_cgi_directory();
 	this->run_script();
 }
 
@@ -106,7 +109,7 @@ void Cgi_Executor::init_env_map()
 {
 	// required for php-cgi >>>
 	this->env_map["REDIRECT_STATUS"] = "200";
-	this->env_map["SCRIPT_FILENAME"] = this->_path_analyser.path_translated;
+	this->env_map["SCRIPT_FILENAME"] = this->_path_analyser.script_name;
 	// <<<< required for php-cgi
 	if (this->body.length() > 0)
 		this->env_map["CONTENT_LENGTH"] = util::int_to_string(body.length());
@@ -193,7 +196,7 @@ void Cgi_Executor::create_argv_arr()
 	std::string arg_0 = this->_corresponding_route.get_cgi_interpreter(this->_path_analyser.script_extension);
 	if (arg_0.length() == 0)
 		arg_0 = this->_corresponding_route.get_cgi_interpreter("sh");
-	std::string arg_1 = this->_path_analyser.path_translated;
+	std::string arg_1 = this->_path_analyser.script_name;
 	this->argv_arr = new char *[3];
 	this->argv_arr[0] = NULL;
 	this->argv_arr[1] = NULL;
@@ -208,6 +211,12 @@ void Cgi_Executor::create_argv_arr()
 	if (!this->argv_arr[1])
 		throw(CgiExecutorSystemFunctionFailed("new"));
 	std::strcpy(this->argv_arr[1], arg_1.c_str());
+}
+
+void Cgi_Executor::change_to_cgi_directory()
+{
+	if(chdir(this->_path_analyser.path_translated_folder.c_str()) == -1)
+		throw(CgiExecutorSystemFunctionFailed("chdir"));
 }
 
 void Cgi_Executor::run_script()

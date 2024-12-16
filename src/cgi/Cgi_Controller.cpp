@@ -110,10 +110,7 @@ e_cgi_status Cgi_Controller::check_cgi()
 			std::cout << "Child exited with status: " << WEXITSTATUS(status) << std::endl;
 		}
 		else
-		{
 			this->status = CGI_EXITED_ERROR;
-			// throw(CgiControllerSystemFunctionFailed("child process exit"));
-		}
 	}
 	else
 		throw(CgiControllerSystemFunctionFailed("waitpid"));

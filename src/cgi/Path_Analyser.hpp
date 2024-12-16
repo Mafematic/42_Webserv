@@ -37,6 +37,9 @@ class Path_Analyser
 	// ./root/cgi/cgi-bin/hello.py
 	std::string path_translated;
 
+	// ./root/cgi/cgi-bin/hello.py
+	std::string path_translated_folder;
+
 	// py
 	std::string script_extension;
 
@@ -50,8 +53,10 @@ class Path_Analyser
 	void extract_query_string();
 	void find_first_dot();
 	void find_first_slash_after_dot();
+	void find_first_slash_before_dot();
 	size_t	_pos_dot;
-	size_t	_pos_slash;
+	size_t	_pos_slash_after_dot;
+	size_t	_pos_slash_before_dot;
 	size_t	_pos_script_start;
 
 };
