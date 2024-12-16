@@ -29,6 +29,7 @@ class Cgi_Controller
 
 	void start_cgi();
 	e_cgi_status check_cgi();
+	int	kill_child();
 
 	int pipe_receive_cgi_answer[2];
 	std::string tmp_file_name;

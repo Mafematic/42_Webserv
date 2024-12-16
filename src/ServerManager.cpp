@@ -54,13 +54,13 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	Logger::log(TRACE, "Request read", client.getRequest().getMethod() + " " + client.getRequest().getPath(), client.getPrintName(), client.getFd());
 
 	client.generateResponse();
-	std::cout << RequestRouter::valid << std::endl;
+	//std::cout << RequestRouter::valid << std::endl;
 	if (currentRoute.get_location() == "/cgi-bin/" && RequestRouter::valid)
 	{
 		acceptNewCGIConnection(client.getFd());
 		client.updateLastActivity();
-		client.clearRequest();
 		client.setCGI(true);
+		client.clearRequest();
 		Logger::log(DEBUG, "CGI Request : CGI initialized and running", "", client.getPrintName(), client.getFd());
 		return ;
 	}
@@ -108,6 +108,7 @@ void	ServerManager::handleCGI()
 		//close(_eventFd);
 		epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
 		//cgi_controllers.erase(_eventFd);
+		//error code ----------> response????
 	}
 	else if (status == READ_NOT_COMPLETE)
 		return ;
@@ -118,14 +119,25 @@ void	ServerManager::handleCGI()
 	}
 }
 
-void	ServerManager::cleanUpCGI(Client &client, int fd)
+void ServerManager::cleanUpCGI(Client &client, int fd)
 {
+	Logger::log(DEBUG, "Cleaning up CGI for client", "", client.getPrintName(), fd);
+
 	client.setCGIfinished(false);
 	client.setCGI(false);
-	epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL);
+
+	if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+		Logger::log(ERROR, "Failed to remove CGI FD from epoll", "", client.getPrintName(), fd);
+	}
 	close(fd);
-	cgi_controllers.erase(fd);
+
+	if (cgi_controllers.find(fd) != cgi_controllers.end())
+	{
+		cgi_controllers[fd].kill_child();
+		cgi_controllers.erase(fd);
+	}
 	client.clearRequest();
+	client.clearResponse();
 }
 
 
@@ -176,17 +188,20 @@ void	ServerManager::checkForCGI()
 {
 	for (std::map<int, Cgi_Controller>::iterator it = cgi_controllers.begin(); it != cgi_controllers.end(); )
 	{
-		int status = it->second.check_cgi();
-		Client &client = _clients[it->second.corresponding_client.getFd()];
+		int clientFd = it->second.corresponding_client.getFd();
 
-		if (_clients.find(client.getFd()) == _clients.end())
+		if (_clients.find(clientFd) == _clients.end())
 		{
-			std::cout << YELLOW << "Client disconnected before CGI completion, cleaning up" << RESET << std::endl;
-			close(it->first);
+			Logger::log(WARNING, "Client disconnected befor CGI completion", "", "", clientFd);
 			epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->first, NULL);
-			cgi_controllers.erase(it++);
-			continue;
+			close(it->first);
+			it->second.kill_child();
+			cgi_controllers.erase(it->first);
+			return;
 		}
+
+		Client &client = _clients[clientFd];
+		int status = it->second.check_cgi();
 
 		if (status == CGI_EXITED_NORMAL)
 		{
@@ -199,21 +214,19 @@ void	ServerManager::checkForCGI()
 		else if (status == CGI_KILLED_TIMEOUT)
 		{
 			Logger::log(WARNING, "[CGI TIMEOUT] CGI process killed due to timeout", "", client.getPrintName(), client.getFd());
-			//client.setResponse("HTTP/1.1 504 Gateway Timeout\r\nContent-Length: 0\r\n\r\n");
-			client.setResponse(getCustomError(client, 504));
 			cleanUpCGI(client, it->first);
+			client.setResponse(getCustomError(client, 504));
 			return;
 		}
 		else if (status == CGI_EXITED_ERROR)
 		{
 			Logger::log(ERROR, "[CGI ERROR] CGI process exited with an error", "", client.getPrintName(), client.getFd());
-			//client.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
-			client.setResponse(getCustomError(client, 500));
 			cleanUpCGI(client, it->first);
+			client.setResponse(getCustomError(client, 500));
 			return;
 		}
-
-		++it;
+		else
+			++it;
 	}
 }
 
@@ -252,8 +265,8 @@ void ServerManager::closeConnection(Client &client, std::string reason)
 	Logger::log(DEBUG, reason + " Client disconnected", "", client.getPrintName(), client.getFd());
 	client.clearRequest();
 	client.clearResponse();
-	close(client.getFd());
 	epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.getFd(), NULL);
+	close(client.getFd());
 	_clients.erase(client.getFd());
 }
 
@@ -297,6 +310,13 @@ void ServerManager::acceptNewConnection(Serverhandler handler)
 	clientSocket = accept(_eventFd, (struct sockaddr *)&client_addr, &client_len);
 	if (clientSocket >= 0)
 	{
+		if (_clients.find(clientSocket) != _clients.end() || cgi_controllers.find(clientSocket) != cgi_controllers.end())
+		{
+			Logger::log(WARNING, "Stale FD reuse detected", "", "", clientSocket);
+			close(clientSocket);
+			return;
+		}
+
 		setNonBlocking(clientSocket);
 		_ev.events = EPOLLIN | EPOLLOUT;
 		_ev.data.fd = clientSocket;

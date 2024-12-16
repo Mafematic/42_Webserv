@@ -79,6 +79,12 @@ void Cgi_Controller::start_cgi()
 		throw(CgiControllerSystemFunctionFailed("fork"));
 }
 
+int	Cgi_Controller::kill_child()
+{
+	return kill(this->executor_pid_id, SIGKILL);
+
+}
+
 e_cgi_status Cgi_Controller::check_cgi()
 {
 	int		status;
@@ -90,7 +96,7 @@ e_cgi_status Cgi_Controller::check_cgi()
 	{
 		// std::cout << "Child process timed out,
 			// getting killed..." << std::endl;
-		if (kill(this->executor_pid_id, SIGKILL) < 0)
+		if (kill_child() < 0)
 			throw(CgiControllerSystemFunctionFailed("kill"));
 		this->status = CGI_KILLED_TIMEOUT;
 		this->remove_cgi_tmp_infile();

@@ -145,17 +145,17 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		filepath += "/";
 	}
-	std::cout << "++++ rootPath: " << filepath << std::endl;
-	std::cout << "++++ path: " << path << std::endl;
+	// std::cout << "++++ rootPath: " << filepath << std::endl;
+	// std::cout << "++++ path: " << path << std::endl;
 
 	//filepath += path;
 	filepath += req.getPath();
 
-	std::cout << "++++ rootPath: " << rootPath << std::endl;
-	std::cout << "++++ Path: " << req.getPath() << std::endl;
-	std::cout << "++++ Final Filepath: " << filepath << std::endl;
-    std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
-    std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
+	// std::cout << "++++ rootPath: " << rootPath << std::endl;
+	// std::cout << "++++ Path: " << req.getPath() << std::endl;
+	// std::cout << "++++ Final Filepath: " << filepath << std::endl;
+    // std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
+    // std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
 
 	if (!(req.getMethod() == "POST" && req.getPath() == "/upload") && req.getPath().find("/cgi-bin/") != 0)
 	{
@@ -243,6 +243,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 				customError = getCustomErrorPage(rootPath, route, 403, server);
 				return _serveFile(customError, 403, req);
 			}
+			return _serveFile(scriptFullPath, 200, req);
 		}
 		if (req.getPath() == "/" || req.getPath()[req.getPath().length() - 1] == '/')
 		{
@@ -330,7 +331,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 
 		std::string fullFilePath = "./" + relativePath;
-		std::cout << "+++ Full File Path: " << fullFilePath << std::endl;
+		//std::cout << "+++ Full File Path: " << fullFilePath << std::endl;
 
 		// Check if the uploads directory is writable
 		if (!util::directory_is_writable("./uploads"))
@@ -363,7 +364,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, Request &req)
 {
-	std::cout << "+++ in here 1" << std::endl;
+	//std::cout << "+++ in here 1" << std::endl;
 
     std::string content = "";
     if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
@@ -384,7 +385,7 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
             content = contentOrFilepath;  // Assume it's raw HTML content
         }
     }
-	std::cout << "+++ in here 2" << std::endl;
+	//std::cout << "+++ in here 2" << std::endl;
 
     std::string statusLine;
     switch (statusCode)
@@ -464,13 +465,13 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
         statusLine += "\r\nConnection: close";
     }
     statusLine += "\r\n\r\n";
-	std::cout << "+++ statusLine1" << statusLine << std::endl;
+	//std::cout << "+++ statusLine1" << statusLine << std::endl;
 
     if (!(statusCode >= 300 && statusCode < 400))
 	{
 		statusLine += content;
 	}
-	std::cout << "+++ statusLine2" << statusLine << std::endl;
+	//std::cout << "+++ statusLine2" << statusLine << std::endl;
 
     return statusLine;
 }

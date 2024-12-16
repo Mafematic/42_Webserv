@@ -124,7 +124,7 @@
         });
 
         function cgiTime(scriptExtension) {
-            const url = `http://127.0.0.1:8004/cgi-bin/time.${scriptExtension}/test/hi?a=1&b=2`;
+            const url = `http://127.0.0.1:8004/cgi-bin/time.${scriptExtension}`;
             const customBody = `The time has been obtained using ${scriptExtension}!`;
             fetch(url)
                 .then(response => {
@@ -145,7 +145,7 @@
         }
 
         function cgiPost(scriptExtension) {
-            const url = `http://127.0.0.1:8004/cgi-bin/print_env_body.${scriptExtension}/test/hi?a=1&b=2`;
+            const url = `http://127.0.0.1:8004/cgi-bin/print_env_body.${scriptExtension}`;
             const defaultBody = `This is a custom body content! It was printed using ${scriptExtension}!`;
             const customBody = document.querySelector('#cgiBodyInputField').value || defaultBody;
             fetch(url, {
