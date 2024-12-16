@@ -145,9 +145,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		filepath += "/";
 	}
-	// std::cout << "++++ rootPath: " << filepath << std::endl;
-	// std::cout << "++++ path: " << path << std::endl;
-
 	//filepath += path;
 	filepath += req.getPath();
 
@@ -157,16 +154,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
     // std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
     // std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
 
-	if (!(req.getMethod() == "POST" && req.getPath() == "/upload") && req.getPath().find("/cgi-bin/") != 0)
-	{
-		if (!route.is_readable(filepath))
-		{
-			valid = false;
-			customError = getCustomErrorPage(rootPath, route, 403, server);
-			return _serveFile(customError, 403, req);
-		}
-	}
-
+	
     // Test #1
 	if (!req.isValid()) // Early exit for invalid requests
 	{
@@ -313,6 +301,15 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			}
 			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req);
+		}
+	}
+	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
+	{		
+		if (!route.is_readable(filepath))
+		{
+			valid = false;
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
 		}
 	}
 	if (req.getMethod() == "DELETE")
