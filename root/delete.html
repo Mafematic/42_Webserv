@@ -63,27 +63,50 @@
     </div>
 
 	<script>
-    function sendDeleteRequest() {
+    function isValidPath(filePath)
+    {
+        return filePath.startsWith('/uploads/') && !filePath.includes('..');
+    }
+
+    function sendDeleteRequest()
+    {
         const filePath = document.getElementById('file-path').value;
-        if (!filePath) {
+        if (!filePath)
+        {
             document.getElementById('result').innerText = 'Error: Please provide a file path.';
             return;
         }
 
-		fetch(filePath, { method: 'DELETE' })
-    .then(response => {
-        if (response.ok) {
-            alert('File deleted successfully.');
-        } else if (response.status === 404) {
-            alert('File does not exist. Try again.');
-        } else if (response.status === 500) {
-            window.location.href = '/500.html';
+        if (!isValidPath(filePath))
+        {
+            document.getElementById('result').innerText = 'Error: Invalid file path.';
+            return;
         }
-    })
-    .catch(err => {
-        document.getElementById('result').innerText = `Error: ${err.message}`;
-    });
+
+        fetch(filePath, { method: 'DELETE' })
+            .then(response => {
+                if (response.ok)
+                {
+                    alert('File deleted successfully.');
+                }
+                else if (response.status === 404)
+                {
+                    alert('File does not exist. Try again.');
+                }
+                else if (response.status === 403)
+                {
+                    alert('Forbidden: Cannot delete the specified file.');
+                }
+                else if (response.status === 500)
+                {
+                    window.location.href = '/500.html';
+                }
+            })
+            .catch(err => {
+                document.getElementById('result').innerText = `Error: ${err.message}`;
+            });
     }
+    
 </script>
 </body>
 

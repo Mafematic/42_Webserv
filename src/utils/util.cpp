@@ -308,4 +308,9 @@ void replace_all(std::string &str, std::string search_for, std::string replace_w
     }
 }
 
+bool directory_is_writable(const std::string &path)
+{
+        return access(path.c_str(), W_OK) == 0;
+}
+
 } // namespace util
