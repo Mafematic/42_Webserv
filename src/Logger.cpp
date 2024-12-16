@@ -5,14 +5,16 @@ void Logger::log(LogLevel lvl, const std::string& msg, const std::string& method
 	std::string levelStr = logLevelToString(lvl); // Call static functions directly
 	std::string timestamp = getTimestamp();
 	std::string colorcode = getColor(lvl);
-
 	std::ostringstream logStream;
-	logStream << "[" << timestamp << "] " << colorcode << "[" << levelStr << "] ";
+
+	logStream << "[" << timestamp << "] ";
+	if (name != "")
+		logStream << "[" << name << "] ";
+	logStream << colorcode << "[" << levelStr << "] ";
 
 	if (lvl == TRACE && method != "")
-		logStream << "[" << method << " Request] ";
-
-	logStream << msg << RESET << name;
+		logStream << "[" << method << "] ";
+	logStream << msg << RESET;
 
 	std::cout << logStream.str() << std::endl;
 }

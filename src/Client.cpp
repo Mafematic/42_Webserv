@@ -352,6 +352,6 @@ std::string	Client::getPrintName()
 	int server_port = ntohs(server_addr.sin_port);
 
 	std::ostringstream ss;
-	ss << "	" << server_ip << ":" << server_port;
+	ss << server_ip << ":" << server_port;
 	return ss.str();
 }

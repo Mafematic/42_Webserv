@@ -32,7 +32,7 @@ void ServerManager::setup(std::string config_path)
 	}
 }
 
-//-------------------------------------------------HANDLE CLIENT REQUEST & RESPONSE-------------------------------------------------//
+//-------------------------------------------------HANDLE CLIENT REQUEST, CGI & RESPONSE-------------------------------------------------//
 
 void	ServerManager::handleClientRequest(Client &client, std::vector<Server> servers)
 {
@@ -51,16 +51,15 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	client.setServer(servers);
 	client.setRoute(client.getServer());
 	currentRoute = client.getRoute();
-	Logger::log(TRACE, "Request read", client.getRequest().getMethod(), client.getPrintName());
+	Logger::log(TRACE, "Request read", client.getRequest().getMethod() + " " + client.getRequest().getPath(), client.getPrintName());
 
 	if (currentRoute.get_location() == "/cgi-bin/")
 	{
-		std::cout << RED << "CGI Request" << RESET << std::endl;
 		acceptNewCGIConnection(client.getFd());
 		client.updateLastActivity();
 		client.clearRequest();
 		client.setCGI(true);
-		std::cout << RED << "CGI initialized and running..." << RESET << std::endl;
+		Logger::log(DEBUG, "CGI Request : CGI initialized and running", "", client.getPrintName());
 		return ;
 	}
 
@@ -104,7 +103,7 @@ void	ServerManager::handleCGI()
 	int status = client.readRequest(_eventFd);
 	if (status == READ_ERROR)
 	{
-		Logger::log(ERROR, "Reading from cgi-pipe : clean up ", "", client.getPrintName());
+		Logger::log(ERROR, "[CGI] Reading from cgi-pipe : clean up ", "", client.getPrintName());
 		client.setCGIfinished(false);
 		close(_eventFd);
 		epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
@@ -115,18 +114,17 @@ void	ServerManager::handleCGI()
 	else
 	{
 		client.setResponse(client.getRequestStr());
-		Logger::log(DEBUG, "CGI read from pipe : ready to send response!", "", client.getPrintName());
+		Logger::log(DEBUG, "[CGI] read from pipe : waiting for child to finish", "", client.getPrintName());
 	}
 }
 
-void	ServerManager::cleanUpCGI(Client &client, const std::string &logMessage)
+void	ServerManager::cleanUpCGI(Client &client, int fd)
 {
-	Logger::log(DEBUG, logMessage, "", client.getPrintName());
 	client.setCGIfinished(false);
 	client.setCGI(false);
-	epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
-	close(_eventFd);
-	cgi_controllers.erase(_eventFd);
+	epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL);
+	close(fd);
+	cgi_controllers.erase(fd);
 	client.clearRequest();
 }
 
@@ -181,7 +179,6 @@ void	ServerManager::checkForCGI()
 		int status = it->second.check_cgi();
 		Client &client = _clients[it->second.corresponding_client.getFd()];
 
-
 		if (_clients.find(client.getFd()) == _clients.end())
 		{
 			std::cout << YELLOW << "Client disconnected before CGI completion, cleaning up" << RESET << std::endl;
@@ -193,30 +190,30 @@ void	ServerManager::checkForCGI()
 
 		if (status == CGI_EXITED_NORMAL)
 		{
-			std::cout << RED << "CGI exited normally for client " << client.getFd() << RESET << std::endl;
+			Logger::log(DEBUG, "[CGI] Child finished : ready to send response", "", client.getPrintName());
 			client.setCGIfinished(true);
 			cgi_controllers.erase(it->first);
+			close(it->first);
 			return ;
 		}
 		else if (status == CGI_KILLED_TIMEOUT)
 		{
-			Logger::log(WARNING, "CGI process killed due to timeout", "", client.getPrintName());
+			Logger::log(WARNING, "[CGI TIMEOUT] CGI process killed due to timeout", "", client.getPrintName());
 			client.setResponse("HTTP/1.1 504 Gateway Timeout\r\nContent-Length: 0\r\n\r\n");
-			cleanUpCGI(client, "[CGI Timeout]");
+			cleanUpCGI(client, it->first);
 			return;
 		}
 		else if (status == CGI_EXITED_ERROR)
 		{
-			Logger::log(ERROR, "CGI process exited with an error", "", client.getPrintName());
+			Logger::log(ERROR, "[CGI ERROR] CGI process exited with an error", "", client.getPrintName());
 			client.setResponse("HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\n\r\n");
-			cleanUpCGI(client, "[CGI Error]");
+			cleanUpCGI(client, it->first);
 			return;
 		}
 
 		++it;
 	}
 }
-
 
 void ServerManager::checkTimeout()
 {
@@ -241,7 +238,6 @@ void ServerManager::closeConnection(Client &client, std::string reason)
 	Logger::log(DEBUG, reason + " Client disconnected", "", client.getPrintName());
 	client.clearRequest();
 	client.clearResponse();
-	client.setCGIfinished(false);
 	close(client.getFd());
 	epoll_ctl(_epollFd, EPOLL_CTL_DEL, client.getFd(), NULL);
 	_clients.erase(client.getFd());
@@ -269,7 +265,7 @@ void	ServerManager::acceptNewCGIConnection(int clientFD)
 	_ev.data.fd = cgi_fd;
 	if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, cgi_fd, &_ev) == -1)
 	{
-		std::cerr << "Error: epoll_ctl failed for client socket" << std::endl;
+		Logger::log(ERROR, "Failed to add cgi-pipe to socket", "", client.getPrintName());
 		close(cgi_fd);
 		return ;
 	}
@@ -292,16 +288,16 @@ void ServerManager::acceptNewConnection(Serverhandler handler)
 		_ev.data.fd = clientSocket;
 		if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, clientSocket, &_ev) == -1)
 		{
-			std::cerr << "Error: epoll_ctl failed for client socket" << std::endl;
+			Logger::log(ERROR, "Fialed to add client to socket", "", "");
 			close(clientSocket);
 			return ;
 		}
-		std::cout << GREEN << "Accepted new client connection : ClientFd " << clientSocket << RESET << std::endl;
 		Client new_client(clientSocket, handler, client_addr);
 		_clients[clientSocket] = new_client;
+		Logger::log(INFO, "Accpeted new client-connection", "", new_client.getPrintName());
 	}
 	else
-		std::cerr << "Accept failed." << std::endl;
+		Logger::log(ERROR, "Failed to accept new client-connection", "", "");
 }
 
 void ServerManager::setNonBlocking(int socketFd)
@@ -311,16 +307,10 @@ void ServerManager::setNonBlocking(int socketFd)
 	// Get the current flags on the socket
 	flags = fcntl(socketFd, F_GETFL, 0);
 	if (flags == -1)
-	{
-		std::cerr << "Error: Failed to get flags for socket. Error: " << strerror(errno) << std::endl;
-		return ;
-	}
+		return Logger::log(ERROR, "Failed to set socket to non-blocking mode.", "", "");
 	// Set the socket to non-blocking by adding O_NONBLOCK to its flags
 	if (fcntl(socketFd, F_SETFL, flags | O_NONBLOCK) == -1)
-	{
-		std::cerr << "Error: Failed to set socket to non-blocking mode. Error: " << strerror(errno) << std::endl;
-		return ;
-	}
+		return Logger::log(ERROR, "Failed to set socket to non-blocking mode.", "", "");
 }
 
 //-------------------------------------------------EPOLL-------------------------------------------------//
@@ -330,7 +320,7 @@ int ServerManager::createEpoll()
 	_epollFd = epoll_create1(0);
 	if (_epollFd == -1)
 	{
-		std::cerr << "Error: epoll_create1 failed" << std::endl;
+		Logger::log(ERROR, "Failed to create epoll.", "", "");
 		return (-1);
 	}
 	return (1);

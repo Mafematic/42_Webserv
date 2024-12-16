@@ -16,7 +16,7 @@ public:
 private:
 
     static std::string _serveFile(const std::string &filepath, int statusCode, Request &req);
-    
+
 
 };
 

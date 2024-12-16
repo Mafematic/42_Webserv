@@ -406,6 +406,9 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 		case 503:
 			statusLine = "HTTP/1.1 503 Service Unavailable";
 			break;
+		case 504:
+			statusLine = "HTTP/1.1 504 Gateway Timeout";
+			break;
 		default:
 			statusLine = "HTTP/1.1 500 Internal Server Error";
 	}
