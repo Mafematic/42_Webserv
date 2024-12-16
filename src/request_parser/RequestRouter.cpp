@@ -220,6 +220,24 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 	if (req.getMethod() == "GET" || (req.getMethod() == "POST" && route.get_location() == "/cgi-bin/"))
 	{
+		if (req.getPath().find("/cgi-bin/") == 0)
+		{
+			std::string cgiDir = rootPath + "/cgi-bin";
+			
+			// Check if the cgi-bin directory is executable
+			if (!route.is_executable(cgiDir))
+			{
+				customError = getCustomErrorPage(rootPath, route, 403, server);
+				return _serveFile(customError, 403, req);
+			}
+
+			// Check if the specific CGI file is executable
+			if (!route.is_executable(filepath))
+			{
+				customError = getCustomErrorPage(rootPath, route, 403, server);
+				return _serveFile(customError, 403, req);
+			}
+		}
 		if (req.getPath() == "/" || req.getPath()[req.getPath().length() - 1] == '/')
 		{
 			std::vector<std::string> indices = route.get_index();
