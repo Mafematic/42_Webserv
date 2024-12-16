@@ -55,7 +55,7 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 
 	client.generateResponse();
 	std::cout << RequestRouter::valid << std::endl;
-	if (currentRoute.get_location() == "/cgi-bin/")
+	if (currentRoute.get_location() == "/cgi-bin/" && RequestRouter::valid)
 	{
 		acceptNewCGIConnection(client.getFd());
 		client.updateLastActivity();
@@ -268,8 +268,8 @@ void	ServerManager::acceptNewCGIConnection(int clientFD)
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
-		//_clients[clientFD].setResponse("");
-		//Errorcode <---------------
+		_clients[clientFD].setResponse(getCustomError(client, 500));
+		return ;
 	}
 
 	int cgi_fd = cgi.pipe_receive_cgi_answer[0];

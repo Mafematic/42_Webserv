@@ -218,7 +218,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
         return _serveFile(customError, 500, req); // Internal server error
 	}
 
-	if (req.getMethod() == "GET")
+	if (req.getMethod() == "GET" || (req.getMethod() == "POST" && route.get_location() == "/cgi-bin/"))
 	{
 		if (req.getPath() == "/" || req.getPath()[req.getPath().length() - 1] == '/')
 		{
