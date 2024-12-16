@@ -86,7 +86,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
     if (server.get_return_is_defined())
 	{
-		std::cout << "+++ in here" << std::endl;
 		util::Return_Definition serverReturn = server.get_return();
 		std::cout << "++ return URL" << serverReturn.url << std::endl;
 		std::cout << "++ return URL" << serverReturn.status_code << std::endl;
@@ -235,6 +234,12 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 		if (req.getPath() == "/" || req.getPath()[req.getPath().length() - 1] == '/')
 		{
+			if (!route.is_readable(filepath))
+			{
+				valid = false;
+				customError = getCustomErrorPage(rootPath, route, 403, server);
+				return _serveFile(customError, 403, req);
+			}
 			std::vector<std::string> indices = route.get_index();
 			if (!indices.empty())
 			{
@@ -246,8 +251,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 						indexFilepath += "/";
 					}
 					indexFilepath += *it;
-
-					//std::cout << "++++ indexFile: " << indexFilepath << std::endl;
 
 					if (util::fileExists(indexFilepath))
 					{
@@ -273,6 +276,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 			// If no location-specific index files and autoindex is off, fall back to server-level index files
 			indices = server.get_index();
+
 			if (!indices.empty())
 			{
 				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
@@ -301,15 +305,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			}
 			customError = getCustomErrorPage(rootPath, route, 404, server);
 			return _serveFile(customError, 404, req);
-		}
-	}
-	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
-	{		
-		if (!route.is_readable(filepath))
-		{
-			valid = false;
-			customError = getCustomErrorPage(rootPath, route, 403, server);
-			return _serveFile(customError, 403, req);
 		}
 	}
 	if (req.getMethod() == "DELETE")
@@ -355,14 +350,21 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			return _serveFile(customError, 404, req);
 		}
 	}
+	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
+	{		
+		if (!route.is_readable(filepath))
+		{
+			valid = false;
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
+		}
+	}
 	customError = getCustomErrorPage(rootPath, route, 404, server);
 	return _serveFile(customError, 404, req);
 }
 
 std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, Request &req)
 {
-	//std::cout << "+++ in here 1" << std::endl;
-
     std::string content = "";
     if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
     {
@@ -382,8 +384,6 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
             content = contentOrFilepath;  // Assume it's raw HTML content
         }
     }
-	//std::cout << "+++ in here 2" << std::endl;
-
     std::string statusLine;
     switch (statusCode)
 	{
