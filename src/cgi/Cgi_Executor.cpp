@@ -41,26 +41,7 @@ Cgi_Executor &Cgi_Executor::operator=(const Cgi_Executor &other)
 
 Cgi_Executor::~Cgi_Executor(void)
 {
-	if (this->env_arr)
-	{
-		for (int i = 0; this->env_arr[i] != NULL; ++i)
-		{
-			delete[] this->env_arr[i];
-			this->env_arr[i] = NULL;
-		}
-		delete[] this->env_arr;
-		this->env_arr = NULL;
-	}
-	if (this->argv_arr)
-	{
-		for (int i = 0; this->argv_arr[i] != NULL; ++i)
-		{
-			delete[] this->argv_arr[i];
-			this->argv_arr[i] = NULL;
-		}
-		delete[] this->argv_arr;
-		this->argv_arr = NULL;
-	}
+	this->free_memory(0);
 	return ;
 }
 
@@ -68,9 +49,6 @@ void Cgi_Executor::start_cgi()
 {
 	this->body = this->_corresponding_request.getBody();
 	this->analyse_path();
-	std::cout << "HERE" << std::endl;
-	std::cout << this->_path_analyser;
-	std::cerr << this->_path_analyser;
 	this->init_env_map();
 	this->add_http_headers_to_env_map();
 	this->env_map_to_env_arr();
@@ -78,11 +56,20 @@ void Cgi_Executor::start_cgi()
 	this->put_request_body_into_stdin();
 	if (dup2(this->corresponding_controller->pipe_receive_cgi_answer[1],
 			STDOUT_FILENO) < 0)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("dup2"));
+	}
 	if (close(this->corresponding_controller->pipe_receive_cgi_answer[1]) < 0)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("close"));
+	}
 	if (close(this->corresponding_controller->pipe_receive_cgi_answer[0]) < 0)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("close"));
+	}
 	this->change_to_cgi_directory();
 	this->run_script();
 }
@@ -98,11 +85,20 @@ void Cgi_Executor::put_request_body_into_stdin()
 	out.close();
 	fd = open(temp_file, O_RDONLY);
 	if (fd < 0)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("open"));
+	}
 	if (dup2(fd, STDIN_FILENO) < 0)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("dup2"));
+	}
 	if (close(fd) < 0)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("close"));
+	}
 }
 
 void Cgi_Executor::init_env_map()
@@ -175,7 +171,10 @@ void Cgi_Executor::env_map_to_env_arr()
 
 	this->env_arr = new char *[this->env_map.size() + 1];
 	if (!this->env_arr)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("new"));
+	}
 	i = 0;
 	std::map<std::string, std::string>::iterator it;
 	for (it = this->env_map.begin(); it != this->env_map.end(); ++it)
@@ -184,7 +183,10 @@ void Cgi_Executor::env_map_to_env_arr()
 		this->env_arr[i] = NULL;
 		this->env_arr[i] = new char[val.size() + 1];
 		if (!this->env_arr[i])
+		{
+			this->free_and_exit(12);
 			throw(CgiExecutorSystemFunctionFailed("new"));
+		}
 		std::strcpy(this->env_arr[i], val.c_str());
 		i++;
 		this->env_arr[i] = NULL;
@@ -202,33 +204,77 @@ void Cgi_Executor::create_argv_arr()
 	this->argv_arr[1] = NULL;
 	this->argv_arr[2] = NULL;
 	if (!this->argv_arr)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("new"));
+	}
 	this->argv_arr[0] = new char[arg_0.size() + 1];
 	if (!this->argv_arr[0])
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("new"));
+	}
 	std::strcpy(this->argv_arr[0], arg_0.c_str());
 	this->argv_arr[1] = new char[arg_1.size() + 1];
 	if (!this->argv_arr[1])
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("new"));
+	}
 	std::strcpy(this->argv_arr[1], arg_1.c_str());
 }
 
 void Cgi_Executor::change_to_cgi_directory()
 {
-	if(chdir(this->_path_analyser.path_translated_folder.c_str()) == -1)
+	if (chdir(this->_path_analyser.path_translated_folder.c_str()) == -1)
+	{
+		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("chdir"));
+	}
 }
 
 void Cgi_Executor::run_script()
 {
-	// util::print_n_newlines(3);
-	// std::cerr << this->argv_arr[0] << std::endl;
-	// std::cerr << this->argv_arr[1] << std::endl;
-	// util::print_n_newlines(3);
-	// std::cout << std::flush;
 	execve(this->argv_arr[0], this->argv_arr, this->env_arr);
-	exit(12);
-	// throw(CgiExecutorSystemFunctionFailed("execve"));
+	{
+		this->free_and_exit(12);
+		throw(CgiExecutorSystemFunctionFailed("execve"));
+	}
+}
+
+void Cgi_Executor::free_and_exit(int error_code)
+{
+	this->free_memory(1);
+	exit(error_code);
+}
+
+void Cgi_Executor::free_memory(int error)
+{
+	if (this->env_arr)
+	{
+		for (int i = 0; this->env_arr[i] != NULL; ++i)
+		{
+			delete[] this->env_arr[i];
+			this->env_arr[i] = NULL;
+		}
+		delete[] this->env_arr;
+		this->env_arr = NULL;
+	}
+	if (this->argv_arr)
+	{
+		for (int i = 0; this->argv_arr[i] != NULL; ++i)
+		{
+			delete[] this->argv_arr[i];
+			this->argv_arr[i] = NULL;
+		}
+		delete[] this->argv_arr;
+		this->argv_arr = NULL;
+	}
+	if (error)
+	{
+		close(this->corresponding_controller->pipe_receive_cgi_answer[0]);
+		close(this->corresponding_controller->pipe_receive_cgi_answer[1]);
+	}
 }
 
 Cgi_Executor::CgiExecutorSystemFunctionFailed::CgiExecutorSystemFunctionFailed(std::string function_name) : _function_name(function_name)

@@ -68,7 +68,6 @@ int	Client::readRequest(int fd)
 
 	_bytesReceived += bytesRead;
 	_buffer.append(buffer, bytesRead);
-
 	if (requestComplete())
 		return READ_COMPLETE;
 	if (_isChunked)
