@@ -178,6 +178,12 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	//if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	{
+		if (route.get_location() != "/upload")
+		{
+			valid = false;
+			customError = getCustomErrorPage(rootPath, route, 403, server);
+			return _serveFile(customError, 403, req);
+		}
 		uint maxBodySize = get_max_body_size(route, server);
 		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
