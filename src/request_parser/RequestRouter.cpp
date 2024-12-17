@@ -159,6 +159,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		filepath += "/";
 	}
+
 	//filepath += path;
 	filepath += req.getPath();
 
@@ -175,10 +176,10 @@ std::string RequestRouter::route(Request &req, const Server &server)
     //     return _serveFile(customError, 500, req); // Custom error page for invalid root
 	// }
 
-	//if (req.getMethod() == "POST" && req.getPath() == "/upload")
-	if (req.getMethod() == "POST" && req.getPath() == "/upload")
+	//if (req.getMethod() == "POST" && req.getPath() == "/fileupload")
+	if (req.getMethod() == "POST" && req.getPath() == "/fileupload")
 	{
-		if (route.get_location() != "/upload")
+		if (route.get_location() != "/fileupload")
 		{
 			valid = false;
 			customError = getCustomErrorPage(rootPath, route, 403, server);
@@ -379,7 +380,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			return _serveFile(customError, 404, req);
 		}
 	}
-	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
+	if (!(req.getMethod() == "POST" && req.getPath() == "/fileupload"))
 	{
 		if (!route.is_readable(filepath))
 		{
