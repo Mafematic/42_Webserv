@@ -224,10 +224,11 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (req.getPath().find("/cgi-bin/") == 0)
 		{
 			uint maxBodySize = get_max_body_size(route, server);
+			std::cout << maxBodySize << std::endl;
 			uint contentLength = 0;
 			std::istringstream iss(req.getHeader("Content-Length"));
 
-			if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
+			if ((req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize) && req.getMethod() == "POST")
 			{
 				valid = false;
 				customError = getCustomErrorPage(rootPath, route, 413, server);
@@ -380,7 +381,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 	}
 	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
-	{	
+	{
 		if (!route.is_readable(filepath))
 		{
 			valid = false;
@@ -392,7 +393,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	return _serveFile(customError, 404, req);
 }
 
-std::string getContentType(const std::string &filepath) 
+std::string getContentType(const std::string &filepath)
 {
 	if (util::ends_with(filepath, ".html") || util::ends_with(filepath, ".htm"))
 		return "text/html";

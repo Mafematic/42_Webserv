@@ -27,14 +27,14 @@ SERVER_SOFTWARE -> socket_squad_404/1.0
 - set relevant env vars before executing cgi
 - fork
 - write body to pipe
-- read body from pipe
+-  body from pipe
 
 
 - getCgiEnvironment();
 - fork();
 - changeDirectory();
 - parent: writeBodyToPipe();
-- child: readBodyFromPipe();
+- child: BodyFromPipe();
 - child: to its thing
 - child: write response to pipe
 - parent read from pipe

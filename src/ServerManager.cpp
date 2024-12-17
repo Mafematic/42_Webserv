@@ -41,7 +41,7 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 
 	status = client.readRequest(_eventFd);
 	if (status == READ_ERROR)
-		return client.setResponse(getCustomError(client, 400));
+		return closeConnection(client, "[READ ERROR]");
 	else if (status == CLIENT_DISCONNECTED)
 		return closeConnection(client, "[DISCONNECT]");
 	else if (status == READ_NOT_COMPLETE)
