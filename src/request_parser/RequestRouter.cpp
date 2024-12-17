@@ -14,15 +14,16 @@ std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const
 {
 	std::string code = util::to_string(statusCode);
 
+	std::cout << "in here" << std::endl;
+
 	// 1. Check for location-specific error page
 	std::map<std::string, std::vector<std::string> > routeErrorPages = route.get_error_pages();
 	if (routeErrorPages.count(code))
 	{
-		std::cout << "in here" << std::endl;
 		std::string errorPagePath = routeErrorPages[code][0];
-		if (util::fileExists(rootPath + "/" + errorPagePath))
+		if (util::fileExists(rootPath + route.get_location() + "/" + errorPagePath))
 		{
-			return rootPath + "/" + errorPagePath;
+			return rootPath + route.get_location() + "/" + errorPagePath;
 		}
 	}
 
@@ -30,8 +31,6 @@ std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const
 	std::map<std::string, std::vector<std::string> > serverErrorPages = server.get_error_pages();
 	if (serverErrorPages.count(code))
 	{
-		std::cout << "in here2" << std::endl;
-
 		std::string errorPagePath = serverErrorPages[code][0];
 		std::string serverRoot = server.get_root();
 
@@ -283,20 +282,9 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 			if (!indices.empty())
 			{
-				std::cout << "++++ In here4" << std::endl;
-				// Print the indices
-				std::cout << "++++ Indices: ";
-				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
-				{
-					std::cout << *it << " ";
-				}
-				std::cout << std::endl;
-
 				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
 				{
 					std::string indexFilepath = rootPath;
-					//std::cout << "Here: " << rootPath << " ";
-					//std::cout << "Here: " << filepath << " ";
 					if (indexFilepath[indexFilepath.length() - 1] != '/')
 					{
 						indexFilepath += "/";
