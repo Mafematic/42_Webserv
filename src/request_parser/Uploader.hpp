@@ -19,6 +19,8 @@ class FileUploader
 		FileUploader(const Request &req);
         bool handleRequest();
 		bool isMalformed() const;
+        std::string get_filename() const;
+        std::string get_file_content() const;
 		~FileUploader() {};
 };
 

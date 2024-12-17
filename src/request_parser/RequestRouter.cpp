@@ -89,7 +89,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 {
 	valid = true;
 	std::string customError;
-
     if (server.get_return_is_defined())
 	{
 		util::Return_Definition serverReturn = server.get_return();
@@ -148,13 +147,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	//filepath += path;
 	filepath += req.getPath();
 
-	// std::cout << "++++ rootPath: " << rootPath << std::endl;
-	// std::cout << "++++ Path: " << req.getPath() << std::endl;
-	// std::cout << "++++ Final Filepath: " << filepath << std::endl;
-    // std::cout << "++++ Autoindex: " << server.get_autoindex() << std::endl;
-    // std::cout << "++++ Autoindex: " << route.get_autoindex() << std::endl;
-
-	
     // Test #1
 	if (!req.isValid()) // Early exit for invalid requests
 	{
@@ -172,8 +164,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
-		//std::cout << "++++ client max body size: " << route.get_client_max_body_size() << std::endl;
-		//std::cout << "++++ Server / client max body size: " << server.get_client_max_body_size() << std::endl;
 
 		uint maxBodySize = server.get_client_max_body_size();
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
@@ -182,8 +172,8 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			customError = getCustomErrorPage(rootPath, route, 413, server);
         	return _serveFile(customError, 413, req); // Payload too large
 		}
-
 		FileUploader uploader(req);
+
 		if (!util::directory_is_writable("./uploads"))
 		{
 			customError = getCustomErrorPage(rootPath, route, 403, server);
@@ -330,7 +320,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 
 		std::string fullFilePath = "./" + relativePath;
-		//std::cout << "+++ Full File Path: " << fullFilePath << std::endl;
 
 		// Check if the uploads directory is writable
 		if (!util::directory_is_writable("./uploads"))
@@ -368,6 +357,40 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	}
 	customError = getCustomErrorPage(rootPath, route, 404, server);
 	return _serveFile(customError, 404, req);
+}
+
+std::string getContentType(const std::string &filepath) 
+{
+	if (util::ends_with(filepath, ".html") || util::ends_with(filepath, ".htm"))
+		return "text/html";
+	else if (util::ends_with(filepath, ".txt"))
+		return "text/plain";
+	else if (util::ends_with(filepath, ".css"))
+		return "text/css";
+	else if (util::ends_with(filepath, ".js"))
+		return "application/javascript";
+	else if (util::ends_with(filepath, ".json"))
+		return "application/json";
+	else if (util::ends_with(filepath, ".jpg") || util::ends_with(filepath, ".jpeg"))
+		return "image/jpeg";
+	else if (util::ends_with(filepath, ".png"))
+		return "image/png";
+	else if (util::ends_with(filepath, ".gif"))
+		return "image/gif";
+	else if (util::ends_with(filepath, ".svg"))
+		return "image/svg+xml";
+	else if (util::ends_with(filepath, ".ico"))
+		return "image/x-icon";
+	else if (util::ends_with(filepath, ".pdf"))
+		return "application/pdf";
+	else if (util::ends_with(filepath, ".zip"))
+		return "application/zip";
+	else if (util::ends_with(filepath, ".mp3"))
+		return "audio/mpeg";
+	else if (util::ends_with(filepath, ".mp4"))
+		return "video/mp4";
+	else
+		return "application/octet-stream"; // Default for unknown file types
 }
 
 std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, Request &req)
@@ -443,7 +466,8 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 			statusLine = "HTTP/1.1 500 Internal Server Error";
 	}
 
-    statusLine += "\r\nContent-Type: text/html";
+	statusLine += "\r\nContent-Type: " + getContentType(contentOrFilepath);
+    //statusLine += "\r\nContent-Type: text/html";
 	//statusLine += "\r\nContent-Type: image/png";
 
     statusLine += "\r\nContent-Length: ";
@@ -469,14 +493,13 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
         statusLine += "\r\nConnection: close";
     }
     statusLine += "\r\n\r\n";
-	//std::cout << "+++ statusLine1" << statusLine << std::endl;
 
     if (!(statusCode >= 300 && statusCode < 400))
 	{
 		statusLine += content;
 	}
-	//std::cout << "+++ statusLine2" << statusLine << std::endl;
 
+	//std::cout << "response: " << statusLine << std::endl;
     return statusLine;
 }
 
@@ -508,7 +531,6 @@ Route RequestRouter::_getRoute(const Server &server, Request &req)
             }
         }
     }
-	//std::cout << "+++ Best Match:" << bestMatch << std::endl;
 
     if (bestMatch)
     {

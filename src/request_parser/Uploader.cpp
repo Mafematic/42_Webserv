@@ -1,4 +1,5 @@
 #include "Uploader.hpp"
+#include "webserv.hpp"
 #include <iostream>
 #include <fstream>
 #include <sys/stat.h>
@@ -6,11 +7,8 @@
 FileUploader::FileUploader(const Request &req)
 {
 	_boundary = _extractBoundary(req);
-	//std::cout << "++++ Boundary: " << _boundary << std::endl; 
 	_filename = _extractFilename(req);
-	//std::cout << "++++ Filename: " << _filename << std::endl; 
 	_fileContent = _extractFileContent(req, _boundary);
-	//std::cout << "++++ FileContent: " << _fileContent << std::endl; 
 
 }
 
@@ -88,13 +86,21 @@ std::string FileUploader::_extractFileContent(const Request &req, const std::str
 
 bool FileUploader::handleRequest()
 {
-	if (_filename == "unknown")
+	if (get_filename() == "unknown")
 	{
 		return false;
 	}
+	if (get_file_content().empty())
+    {
+        return false;
+    }
 	mkdir("uploads", 0777);
-
-	std::ofstream file(("uploads/" + _filename).c_str(), std::ios::binary);
+	std::string uploadDir = "./uploads";
+	if (access(uploadDir.c_str(), W_OK) != 0)
+	{
+		return false;
+	}
+	std::ofstream file(("uploads/" + get_filename()).c_str(), std::ios::binary);
 	if (file)
 	{
 		file << _fileContent;
@@ -109,5 +115,15 @@ bool FileUploader::handleRequest()
 
 bool FileUploader::isMalformed() const
 {
-	return _boundary.empty() || _filename == "unknown";
+	return _boundary.empty() || get_filename() == "unknown";
+}
+
+std::string FileUploader::get_filename() const
+{
+    return _filename;
+}
+
+std::string FileUploader::get_file_content() const
+{
+    return _fileContent;
 }
