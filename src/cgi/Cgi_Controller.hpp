@@ -30,6 +30,7 @@ class Cgi_Controller
 	void start_cgi();
 	e_cgi_status check_cgi();
 	int	kill_child();
+	void remove_cgi_tmp_infile();
 
 	int pipe_receive_cgi_answer[2];
 	std::string tmp_file_name;
@@ -56,5 +57,4 @@ class Cgi_Controller
 	std::string get_random_string(size_t length);
 	bool check_cgi_executor_timeout();
 	bool check_cgi_executor_finished();
-	void remove_cgi_tmp_infile();
 };

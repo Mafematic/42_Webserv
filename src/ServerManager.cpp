@@ -41,7 +41,7 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 
 	status = client.readRequest(_eventFd);
 	if (status == READ_ERROR)
-		return closeConnection(client, "[Failed to read request]");
+		return client.setResponse(getCustomError(client, 400));
 	else if (status == CLIENT_DISCONNECTED)
 		return closeConnection(client, "[DISCONNECT]");
 	else if (status == READ_NOT_COMPLETE)
@@ -54,7 +54,6 @@ void	ServerManager::handleClientRequest(Client &client, std::vector<Server> serv
 	Logger::log(TRACE, "Request read", client.getRequest().getMethod() + " " + client.getRequest().getPath(), client.getPrintName(), client.getFd());
 
 	client.generateResponse();
-	//std::cout << RequestRouter::valid << std::endl;
 	if (currentRoute.get_location() == "/cgi-bin/" && RequestRouter::valid)
 	{
 		acceptNewCGIConnection(client.getFd());
@@ -105,10 +104,10 @@ void	ServerManager::handleCGI()
 	{
 		Logger::log(ERROR, "[CGI] Reading from cgi-pipe : clean up ", "", client.getPrintName(), client.getFd());
 		client.setCGIfinished(false);
-		//close(_eventFd);
+		close(_eventFd);
 		epoll_ctl(_epollFd, EPOLL_CTL_DEL, _eventFd, NULL);
-		//cgi_controllers.erase(_eventFd);
-		//error code ----------> response????
+		cgi_controllers.erase(_eventFd);
+		client.setResponse(getCustomError(client, 500));
 	}
 	else if (status == READ_NOT_COMPLETE)
 		return ;
@@ -192,11 +191,13 @@ void	ServerManager::checkForCGI()
 
 		if (_clients.find(clientFd) == _clients.end())
 		{
-			Logger::log(WARNING, "Client disconnected befor CGI completion", "", "", clientFd);
+			Logger::log(WARNING, "Client disconnected befor CGI completion : cleaning up", "", "", clientFd);
 			epoll_ctl(_epollFd, EPOLL_CTL_DEL, it->first, NULL);
 			close(it->first);
 			it->second.kill_child();
+			it->second.remove_cgi_tmp_infile();
 			cgi_controllers.erase(it->first);
+			//PROBLEM : IF CLIENT DISCONNECTS FIRST << SAME REQUEST OVER AND OVER ---------------------------<<<<<<<<<
 			return;
 		}
 
@@ -310,13 +311,6 @@ void ServerManager::acceptNewConnection(Serverhandler handler)
 	clientSocket = accept(_eventFd, (struct sockaddr *)&client_addr, &client_len);
 	if (clientSocket >= 0)
 	{
-		if (_clients.find(clientSocket) != _clients.end() || cgi_controllers.find(clientSocket) != cgi_controllers.end())
-		{
-			Logger::log(WARNING, "Stale FD reuse detected", "", "", clientSocket);
-			close(clientSocket);
-			return;
-		}
-
 		setNonBlocking(clientSocket);
 		_ev.events = EPOLLIN | EPOLLOUT;
 		_ev.data.fd = clientSocket;

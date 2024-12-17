@@ -109,7 +109,7 @@
             <image id="dogImage" src="" alt="an Image of a dog" />
             <button class="bonus-button" onclick="window.location.href='/cgi-bin/error.py'">GET -> Error Script ->
                 py</button>
-            <button class="bonus-button" onclick="window.location.href='/cgi-bin/endless.py'">GET -> Infinite Loop Script ->
+            <button class="bonus-button" onclick="getEndless()">GET -> Infinite Loop Script ->
                 py</button>
         </div>
     </div>
@@ -122,6 +122,27 @@
         document.addEventListener("DOMContentLoaded", function () {
             // getAnimal("dog");
         });
+
+        function getEndless() {
+            const url = `http://127.0.0.1:8004/cgi-bin/endless.py`;
+            const customBody = `The time has been obtained using!`;
+            fetch(url)
+                .then(response => {
+                    console.log(response);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(htmlContent => {
+                    document.open();
+                    document.write(htmlContent);
+                    document.close();
+                })
+                .catch(error => {
+                    console.error('Error fetching the page:', error);
+                });
+        }
 
         function cgiTime(scriptExtension) {
             const url = `http://127.0.0.1:8004/cgi-bin/time.${scriptExtension}`;

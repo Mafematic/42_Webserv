@@ -14,6 +14,7 @@ Client::Client(int clientFd, Serverhandler handler, struct sockaddr_in client_ad
 	_bytesReceived = 0;
 	_cgi = false;
 	_cgi_finished = false;
+	_cgi_fd = -1;
 
 	char ipBuffer[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(client_addr.sin_addr), ipBuffer, INET_ADDRSTRLEN);
@@ -49,6 +50,7 @@ Client	&Client::operator=(const Client &src)
 	_client_ip = src._client_ip;
 	_cgi = src._cgi;
 	_cgi_finished = src._cgi_finished;
+	_cgi_fd = src._cgi_fd;
 	return *this;
 }
 
@@ -334,6 +336,16 @@ bool	Client::getCGI()
 void	Client::setCGI(bool status)
 {
 	this->_cgi = status;
+}
+
+int	Client::getCgiFd()
+{
+	return _cgi_fd;
+}
+
+void	Client::setCgiFd(int fd)
+{
+	this->_cgi_fd = fd;
 }
 
 std::string	Client::getPrintName()

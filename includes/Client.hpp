@@ -33,6 +33,7 @@ class Client
 
 		bool	_cgi_finished;
 		bool	_cgi;
+		id_t	_cgi_fd;
 
 		int					_client_port;
 		std::string			_client_ip;
@@ -85,6 +86,8 @@ class Client
 		void	setCGI(bool status);
 
 		std::string	getPrintName();
+		int		getCgiFd();
+		void	setCgiFd(int fd);
 };
 
 #endif
