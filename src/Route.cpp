@@ -2,7 +2,7 @@
 #include "external.hpp"
 
 Route::Route() : _location(""), _root(""), _alias_is_defined(false), _alias(""),
-	_return_is_defined(false), _client_max_body_size(1024 * 1024),
+	_return_is_defined(false), _client_max_body_size(0),
 	_autoindex(false), _is_cgi(false)
 {
 	this->_allowed_methods["get"] = true;

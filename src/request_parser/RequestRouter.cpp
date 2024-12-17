@@ -85,6 +85,21 @@ std::string generateAutoindexListing(const std::string &directoryPath, const std
 	return html.str();
 }
 
+uint get_max_body_size(const Route &route, const Server &server)
+{
+	if (route.get_client_max_body_size() > 0)
+	{
+		return route.get_client_max_body_size();
+	}
+
+	if (server.get_client_max_body_size() > 0)
+	{
+		return server.get_client_max_body_size();
+	}
+	return 1024 * 1024; // Default to 1 MB
+	}
+
+
 std::string RequestRouter::route(Request &req, const Server &server)
 {
 	valid = true;
@@ -160,12 +175,13 @@ std::string RequestRouter::route(Request &req, const Server &server)
     //     return _serveFile(customError, 500, req); // Custom error page for invalid root
 	// }
 
+	//if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	if (req.getMethod() == "POST" && req.getPath() == "/upload")
 	{
+		uint maxBodySize = get_max_body_size(route, server);
 		uint contentLength = 0;
 		std::istringstream iss(req.getHeader("Content-Length"));
 
-		uint maxBodySize = server.get_client_max_body_size();
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
 		{
 			// Test #3
@@ -201,6 +217,17 @@ std::string RequestRouter::route(Request &req, const Server &server)
 	{
 		if (req.getPath().find("/cgi-bin/") == 0)
 		{
+			uint maxBodySize = get_max_body_size(route, server);
+			uint contentLength = 0;
+			std::istringstream iss(req.getHeader("Content-Length"));
+
+			if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
+			{
+				valid = false;
+				customError = getCustomErrorPage(rootPath, route, 413, server);
+				return _serveFile(customError, 413, req);
+			}
+
 			Path_Analyser pathAnalyser;
 			pathAnalyser.analyse(req.getPath(), rootPath);
 			std::string scriptFullPath = pathAnalyser.path_translated;
@@ -347,7 +374,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		}
 	}
 	if (!(req.getMethod() == "POST" && req.getPath() == "/upload"))
-	{		
+	{	
 		if (!route.is_readable(filepath))
 		{
 			valid = false;
