@@ -224,7 +224,6 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (req.getPath().find("/cgi-bin/") == 0)
 		{
 			uint maxBodySize = get_max_body_size(route, server);
-			std::cout << maxBodySize << std::endl;
 			uint contentLength = 0;
 			std::istringstream iss(req.getHeader("Content-Length"));
 
