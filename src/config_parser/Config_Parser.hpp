@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../../includes/webserv.hpp"
+#include "webserv.hpp"
 #include "util.hpp"
 #include "Server_Parser.hpp"
 #include "Server.hpp"

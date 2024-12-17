@@ -98,7 +98,8 @@ void Location_Parser::parse_location_block()
 	std::vector<std::string> key_value_strings;
 	std::vector<std::string> key_value_vector;
 	if (this->_location_block_str.empty())
-		throw EmptyLocationDefinition();
+		return;
+		// throw EmptyLocationDefinition();
 	key_value_strings = util::split(this->_location_block_str, ';');
 	std::vector<std::string>::iterator it_key_val;
 	for (it_key_val = key_value_strings.begin(); it_key_val != key_value_strings.end(); it_key_val++)

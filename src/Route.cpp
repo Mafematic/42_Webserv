@@ -226,7 +226,15 @@ bool Route::is_method_allowed(std::string method)
 }
 bool Route::is_readable(const std::string &path) const
 {
-	return access(path.c_str(), R_OK) == 0;
+	
+	std::string test = path;
+	util::replace_all(test, "//", "/");
+	util::print_n_newlines(3);
+	std::cout << "PATH";
+	std::cout << path;
+	std::cout << test;
+	util::print_n_newlines(3);
+	return access(test.c_str(), R_OK) == 0;
 }
 
 bool Route::is_writable(const std::string &path) const

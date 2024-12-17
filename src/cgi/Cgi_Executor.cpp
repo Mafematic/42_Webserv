@@ -228,8 +228,6 @@ void Cgi_Executor::change_to_cgi_directory()
 {
 	if (chdir(this->_path_analyser.path_translated_folder.c_str()) == -1)
 	{
-		std::cout << "CHDIR FAILED";
-		util::print_n_newlines(3);
 		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("chdir"));
 	}
@@ -239,8 +237,6 @@ void Cgi_Executor::run_script()
 {
 	execve(this->argv_arr[0], this->argv_arr, this->env_arr);
 	{
-		std::cout << "EXECVE FAILED";
-		util::print_n_newlines(3);
 		this->free_and_exit(12);
 		throw(CgiExecutorSystemFunctionFailed("execve"));
 	}

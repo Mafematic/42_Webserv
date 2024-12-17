@@ -4,14 +4,18 @@ void ServerManager::setup(std::string config_path)
 {
 	int	duplicate_flag;
 
-	duplicate_flag = false;
 	std::vector<Server> _server_config;
 	Config_Parser parser(config_path);
 	_server_config = parser.parse_config();
 
+	// for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); it++)
+	// {
+	// 	std::cout << *it;
+	// }
 	Logger::log(INFO, "Configuration file parsed", "", "", -1);
 	for (std::vector<Server>::iterator it = _server_config.begin(); it != _server_config.end(); ++it)
 	{
+		duplicate_flag = false;
 		for (std::vector<Serverhandler>::iterator tmp_it = serverhandler.begin(); tmp_it != serverhandler.end(); ++tmp_it)
 		{
 			if (it->get_port() == tmp_it->getPort()
