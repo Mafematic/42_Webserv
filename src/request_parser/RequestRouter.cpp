@@ -13,9 +13,6 @@ bool RequestRouter::valid = true;
 std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
 {
 	std::string code = util::to_string(statusCode);
-
-	std::cout << "in here" << std::endl;
-
 	// 1. Check for location-specific error page
 	std::map<std::string, std::vector<std::string> > routeErrorPages = route.get_error_pages();
 	if (routeErrorPages.count(code))
@@ -225,6 +222,13 @@ std::string RequestRouter::route(Request &req, const Server &server)
 				valid = false;
 				customError = getCustomErrorPage(rootPath, route, 403, server);
 				return _serveFile(customError, 403, req);
+			}
+
+			if (!util::fileExists(scriptFullPath))
+			{
+				valid = false;
+				customError = getCustomErrorPage(rootPath, route, 404, server);
+				return _serveFile(customError, 404, req);
 			}
 
 			// Check if the specific CGI file is executable
