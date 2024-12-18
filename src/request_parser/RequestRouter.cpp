@@ -242,11 +242,12 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			}
 
 			Path_Analyser pathAnalyser;
-			pathAnalyser.analyse(req.getPath(), filepath);
+			pathAnalyser.analyse(req.getPath(), rootPath);
 			std::string scriptFullPath = pathAnalyser.path_translated;
-			std::string cgiDir = filepath + "/cgi-bin";
+			std::string cgiDir = rootPath + "/cgi-bin";
 
 			// Check if the cgi-bin directory is executable
+			
 			if (!route.is_executable(cgiDir))
 			{
 				valid = false;

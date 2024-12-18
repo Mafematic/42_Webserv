@@ -97,6 +97,10 @@
                 {
                     alert('Forbidden: Cannot delete the specified file.');
                 }
+                else if (response.status === 405)
+                {
+                    alert('Method not Allowed. ⊂(✰‿✰)つ');
+                }
                 else if (response.status === 500)
                 {
                     window.location.href = '/500.html';
