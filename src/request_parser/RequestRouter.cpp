@@ -293,8 +293,10 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			// If autoindex is enabled in the route, generate directory listing
 			if (route.get_autoindex() && util::directoryExists(filepath))
 			{
+				std::cout << "in here" << std::endl;
 				if (access(filepath.c_str(), R_OK) == 0)
 				{
+					std::cout << "in here2" << std::endl;
 					std::string listing = generateAutoindexListing(filepath, req.getPath());
 					return _serveFile(listing, 200, req);
 				}
@@ -430,6 +432,8 @@ std::string getContentType(const std::string &filepath)
 std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int statusCode, Request &req)
 {
     std::string content = "";
+	bool isRawHtml = false;
+
     if (statusCode != 303 && req.getMethod() != "DELETE") // No body for 303
     {
         if (util::fileExists(contentOrFilepath))
@@ -446,6 +450,8 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
         else
         {
             content = contentOrFilepath;  // Assume it's raw HTML content
+			isRawHtml = true;
+
         }
     }
     std::string statusLine;
@@ -499,8 +505,14 @@ std::string RequestRouter::_serveFile(const std::string &contentOrFilepath, int 
 		default:
 			statusLine = "HTTP/1.1 500 Internal Server Error";
 	}
-
-	statusLine += "\r\nContent-Type: " + getContentType(contentOrFilepath);
+	if (isRawHtml)
+	{
+		statusLine += "\r\nContent-Type: text/html";
+	}
+	else
+	{
+		statusLine += "\r\nContent-Type: " + getContentType(contentOrFilepath);
+	}
     //statusLine += "\r\nContent-Type: text/html";
 	//statusLine += "\r\nContent-Type: image/png";
 
