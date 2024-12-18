@@ -215,8 +215,7 @@ std::map<std::string, bool> Route::get_allowed_methods() const
 
 bool Route::is_method_allowed(std::string method)
 {
-	std::map<std::string,
-		bool>::iterator it = this->_allowed_methods.find(method);
+	std::map<std::string, bool>::iterator it = this->_allowed_methods.find(method);
 	if (it != this->_allowed_methods.end())
 	{
 		if (it->second)
@@ -226,14 +225,9 @@ bool Route::is_method_allowed(std::string method)
 }
 bool Route::is_readable(const std::string &path) const
 {
-	
+
 	std::string test = path;
 	util::replace_all(test, "//", "/");
-	util::print_n_newlines(3);
-	std::cout << "PATH";
-	std::cout << path;
-	std::cout << test;
-	util::print_n_newlines(3);
 	return access(test.c_str(), R_OK) == 0;
 }
 
