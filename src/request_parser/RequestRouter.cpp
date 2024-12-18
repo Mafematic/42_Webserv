@@ -7,8 +7,6 @@
 
 
 bool RequestRouter::valid = true;
-// Check for uploaded content --> html, jpeg
-// Cleaning
 
 std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const Route &route, int statusCode, const Server &server)
 {
@@ -18,9 +16,10 @@ std::string RequestRouter::getCustomErrorPage(const std::string &rootPath, const
 	if (routeErrorPages.count(code))
 	{
 		std::string errorPagePath = routeErrorPages[code][0];
-		if (util::fileExists(rootPath + route.get_location() + "/" + errorPagePath))
+		if (util::fileExists(rootPath + "/" + errorPagePath))
 		{
-			return rootPath + route.get_location() + "/" + errorPagePath;
+			//return rootPath + route.get_location() + "/" + errorPagePath;
+			return rootPath + "/" + errorPagePath;
 		}
 	}
 
@@ -133,40 +132,47 @@ std::string RequestRouter::route(Request &req, const Server &server)
         return _serveFile(customError, 405, req);
     }
 
+	// alias handling
 	std::string path = req.getPath();
 	if (route.get_alias_is_defined())
 	{
 		std::string location = route.get_location();
+		std::string aliasPath = route.get_alias();
+
 		if (path.find(location) == 0)
 		{
-			path.replace(0, location.length(), "");
+			path.replace(0, location.length(), aliasPath);
+
 			if (!path.empty() && path[0] == '/')
 			{
 				path = path.substr(1);
 			}
+
+			rootPath = aliasPath;
 		}
 	}
-
 	// Remove the leading slash from path if present
 	if (!path.empty() && path[0] == '/')
 	{
 		path = path.substr(1);
 	}
 
-	// Construct the final filepath
 	std::string filepath = rootPath;
 	if (filepath[filepath.length() - 1] != '/')
 	{
 		filepath += "/";
 	}
+	if (path == filepath || path.empty())
+	{
+		path = "";
+	}
 
-	//filepath += path;
-	filepath += req.getPath();
+	filepath += path;
 
     // Test #1
 	if (!req.isValid()) // Early exit for invalid requests
 	{
-		customError = getCustomErrorPage(rootPath, route, 400, server);
+		customError = getCustomErrorPage(filepath, route, 400, server);
         return _serveFile(customError, 400, req);
 	}
 	// // Test #2
@@ -182,7 +188,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (route.get_location() != "/fileupload")
 		{
 			valid = false;
-			customError = getCustomErrorPage(rootPath, route, 403, server);
+			customError = getCustomErrorPage(filepath, route, 403, server);
 			return _serveFile(customError, 403, req);
 		}
 		uint maxBodySize = get_max_body_size(route, server);
@@ -192,31 +198,31 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize)
 		{
 			// Test #3
-			customError = getCustomErrorPage(rootPath, route, 413, server);
+			customError = getCustomErrorPage(filepath, route, 413, server);
         	return _serveFile(customError, 413, req); // Payload too large
 		}
 		FileUploader uploader(req);
 
 		if (!util::directory_is_writable("./uploads"))
 		{
-			customError = getCustomErrorPage(rootPath, route, 403, server);
+			customError = getCustomErrorPage(filepath, route, 403, server);
 			return _serveFile(customError, 403, req);
 		}
 		if (uploader.isMalformed())
 		{
 			// Test #4
-			customError = getCustomErrorPage(rootPath, route, 400, server);
+			customError = getCustomErrorPage(filepath, route, 400, server);
         	return _serveFile(customError, 400, req); // Malformed request
 		}
 
 		if (uploader.handleRequest())
 		{
 			// Test #5 - NO ERROR Code
-			std::string redirectPage = getCustomErrorPage(rootPath, route, 303, server);
+			std::string redirectPage = getCustomErrorPage(filepath, route, 303, server);
     		return _serveFile(redirectPage, 303, req);
 		}
 		// Test #6
-		customError = getCustomErrorPage(rootPath, route, 500, server);
+		customError = getCustomErrorPage(filepath, route, 500, server);
         return _serveFile(customError, 500, req); // Internal server error
 	}
 
@@ -231,27 +237,27 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			if ((req.getHeader("Content-Length").empty() || !(iss >> contentLength) || contentLength > maxBodySize) && req.getMethod() == "POST")
 			{
 				valid = false;
-				customError = getCustomErrorPage(rootPath, route, 413, server);
+				customError = getCustomErrorPage(filepath, route, 413, server);
 				return _serveFile(customError, 413, req);
 			}
 
 			Path_Analyser pathAnalyser;
-			pathAnalyser.analyse(req.getPath(), rootPath);
+			pathAnalyser.analyse(req.getPath(), filepath);
 			std::string scriptFullPath = pathAnalyser.path_translated;
-			std::string cgiDir = rootPath + "/cgi-bin";
+			std::string cgiDir = filepath + "/cgi-bin";
 
 			// Check if the cgi-bin directory is executable
 			if (!route.is_executable(cgiDir))
 			{
 				valid = false;
-				customError = getCustomErrorPage(rootPath, route, 403, server);
+				customError = getCustomErrorPage(filepath, route, 403, server);
 				return _serveFile(customError, 403, req);
 			}
 
 			if (!util::fileExists(scriptFullPath))
 			{
 				valid = false;
-				customError = getCustomErrorPage(rootPath, route, 404, server);
+				customError = getCustomErrorPage(filepath, route, 404, server);
 				return _serveFile(customError, 404, req);
 			}
 
@@ -259,7 +265,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			if (!route.is_executable(scriptFullPath))
 			{
 				valid = false;
-				customError = getCustomErrorPage(rootPath, route, 403, server);
+				customError = getCustomErrorPage(filepath, route, 403, server);
 				return _serveFile(customError, 403, req);
 			}
 			return _serveFile(scriptFullPath, 200, req);
@@ -269,7 +275,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			if (!route.is_readable(filepath))
 			{
 				valid = false;
-				customError = getCustomErrorPage(rootPath, route, 403, server);
+				customError = getCustomErrorPage(filepath, route, 403, server);
 				return _serveFile(customError, 403, req);
 			}
 			std::vector<std::string> indices = route.get_index();
@@ -293,28 +299,25 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			// If autoindex is enabled in the route, generate directory listing
 			if (route.get_autoindex() && util::directoryExists(filepath))
 			{
-				std::cout << "in here" << std::endl;
 				if (access(filepath.c_str(), R_OK) == 0)
 				{
-					std::cout << "in here2" << std::endl;
 					std::string listing = generateAutoindexListing(filepath, req.getPath());
 					return _serveFile(listing, 200, req);
 				}
 				else
 				{
-					customError = getCustomErrorPage(rootPath, route, 403, server);
+					customError = getCustomErrorPage(filepath, route, 403, server);
 					return _serveFile(customError, 403, req);
 				}
 			}
 
 			// If no location-specific index files and autoindex is off, fall back to server-level index files
 			indices = server.get_index();
-
 			if (!indices.empty())
 			{
 				for (std::vector<std::string>::iterator it = indices.begin(); it != indices.end(); ++it)
 				{
-					std::string indexFilepath = rootPath;
+					std::string indexFilepath = server.get_root();
 					if (indexFilepath[indexFilepath.length() - 1] != '/')
 					{
 						indexFilepath += "/";
@@ -327,7 +330,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 					}
 				}
 			}
-			customError = getCustomErrorPage(rootPath, route, 404, server);
+			customError = getCustomErrorPage(filepath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
 		else
@@ -336,7 +339,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			{
 				return _serveFile(filepath, 200, req);
 			}
-			customError = getCustomErrorPage(rootPath, route, 404, server);
+			customError = getCustomErrorPage(filepath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
 	}
@@ -351,7 +354,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 
 		if (relativePath.find("uploads/") != 0)
 		{
-			customError = getCustomErrorPage(rootPath, route, 403, server);
+			customError = getCustomErrorPage(filepath, route, 403, server);
 			return _serveFile(customError, 403, req);
 		}
 
@@ -360,7 +363,7 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		// Check if the uploads directory is writable
 		if (!util::directory_is_writable("./uploads"))
 		{
-			customError = getCustomErrorPage(rootPath, route, 403, server);
+			customError = getCustomErrorPage(filepath, route, 403, server);
 			return _serveFile(customError, 403, req);
 		}
 		// Check if the file exists and delete it
@@ -372,13 +375,13 @@ std::string RequestRouter::route(Request &req, const Server &server)
 			}
 			else
 			{
-				customError = getCustomErrorPage(rootPath, route, 500, server);
+				customError = getCustomErrorPage(filepath, route, 500, server);
 				return _serveFile(customError, 500, req);
 			}
 		}
 		else
 		{
-			customError = getCustomErrorPage(rootPath, route, 404, server);
+			customError = getCustomErrorPage(filepath, route, 404, server);
 			return _serveFile(customError, 404, req);
 		}
 	}
@@ -387,11 +390,11 @@ std::string RequestRouter::route(Request &req, const Server &server)
 		if (!route.is_readable(filepath))
 		{
 			valid = false;
-			customError = getCustomErrorPage(rootPath, route, 403, server);
+			customError = getCustomErrorPage(filepath, route, 403, server);
 			return _serveFile(customError, 403, req);
 		}
 	}
-	customError = getCustomErrorPage(rootPath, route, 404, server);
+	customError = getCustomErrorPage(filepath, route, 404, server);
 	return _serveFile(customError, 404, req);
 }
 
