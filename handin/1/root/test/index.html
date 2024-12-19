@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Webserver Features</title>
+    <style>
+        /* body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        } */
+
+        .centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .grid-container {
+            width: 80%;
+            height: 80%;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .grid-item {
+            background-color: #007bff;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        grid-item:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .bonus-button {
+            background-color: rgb(157, 27, 193);
+        }
+
+        .bonus-button:hover {
+            background-color: rgb(90, 22, 133);
+            /* Optional: Change color on hover */
+        }
+
+
+    </style>
+</head>
+
+<body>
+    <div class="centered">
+        <div class="grid-container">
+            <button class="grid-item button" onclick="window.location.href='/about.html'">Simple GET Request</button>
+            <button class="grid-item button" onclick="window.location.href='upload.html'">Upload File with POST</button>
+            <button class="grid-item button" onclick="window.location.href='/delete.html'">DELETE a File</button>
+            <button class="bonus-button" onclick="window.location.href='/cgi.html'">CGI</button>
+            <button class="bonus-button" onclick="window.location.href='/cookie.html'">Cookies</button>
+
+        </div>
+    </div>
+    <!-- <div>
+        <ul>
+            <li><button onclick="window.location.href='/about.html'">Simple GET Request</button></li>
+            <li><button onclick="window.location.href='upload.html'">Upload File with POST</button></li>
+            <li><button onclick="window.location.href='/delete.html'">DELETE a File</button></li>
+            <br></br>
+        </ul>
+    </div> -->
+
+    <div id="content"></div>
+
+    <script>
+        function fetchContent(endpoint) {
+            fetch(endpoint)
+                .then(response => response.text())
+                .then(data => document.getElementById('content').innerHTML = data)
+                .catch(err => console.error('Error:', err));
+        }
+
+        function showPostForm() {
+            document.getElementById('content').innerHTML = `
+                <form onsubmit="submitPostForm(event, '/post-endpoint')">
+                    <input type="text" name="data" placeholder="Enter some data" required>
+                    <button type="submit">Submit</button>
+                </form>
+            `;
+        }
+
+        function submitPostForm(event, endpoint) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.text())
+                .then(data => document.getElementById('content').innerHTML = data)
+                .catch(err => console.error('Error:', err));
+        }
+
+        function showFileUploadForm() {
+            document.getElementById('content').innerHTML = `
+                <form onsubmit="uploadFile(event, '/fileupload')">
+                    <input type="file" name="file" required>
+                    <button type="submit">Upload</button>
+                </form>
+            `;
+        }
+
+        function uploadFile(event, endpoint) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.text())
+                .then(data => document.getElementById('content').innerHTML = data)
+                .catch(err => console.error('Error:', err));
+        }
+
+    </script>
+</body>
+
+</html>
